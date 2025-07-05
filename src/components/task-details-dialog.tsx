@@ -82,7 +82,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
   const handleGenerateSubtasks = async () => {
     setIsGeneratingSubtasks(true);
     try {
-      const result = await generateSubtasks({ title: task.title, description: task.description });
+      const result = await generateSubtasks({ title: task.title, description: task.description || '' });
       result.subtasks.forEach(subtaskText => {
         addSubtask(task.id, subtaskText);
       });

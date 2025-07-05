@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, ListTodo, Loader2, AlertTriangle, Goal, CalendarClock, Wand2 } from 'lucide-react';
+import { CheckCircle, ListTodo, Loader2, AlertTriangle, Goal, CalendarClock, Wand2, Volume2 } from 'lucide-react';
 import { isPast, isFuture, differenceInDays, formatDistanceToNow } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Task, Priority } from '@/lib/types';
 import { generateDashboardSummary } from '@/ai/flows/generate-dashboard-summary';
+import { generateAudioSummary } from '@/ai/flows/generate-audio-summary';
 
 
 const statusChartConfig = {
@@ -75,6 +77,10 @@ export default function DashboardPage() {
   const { tasks, isInitialized } = useTasks();
   const [summary, setSummary] = React.useState("");
   const [isGeneratingSummary, setIsGeneratingSummary] = React.useState(true);
+  const [summaryAudio, setSummaryAudio] = React.useState<string | null>(null);
+  const [isGeneratingAudio, setIsGeneratingAudio] = React.useState(true);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
+
 
   const { stats, upcomingTasks, overdueTasksList } = React.useMemo(() => {
     if (!isInitialized) return { stats: null, upcomingTasks: [], overdueTasksList: [] };
@@ -104,6 +110,9 @@ export default function DashboardPage() {
   React.useEffect(() => {
     if (stats) {
       setIsGeneratingSummary(true);
+      setIsGeneratingAudio(true);
+      setSummaryAudio(null);
+
       generateDashboardSummary({
         totalTasks: stats.total,
         completedTasks: stats.done,
@@ -111,11 +120,24 @@ export default function DashboardPage() {
         upcomingTasks: upcomingTasks.length,
       }).then(result => {
         setSummary(result.summary);
+        setIsGeneratingSummary(false);
+
+        // Now generate audio
+        generateAudioSummary({ summary: result.summary })
+          .then(audioResult => {
+            setSummaryAudio(audioResult.media);
+          })
+          .catch(err => {
+            console.error("Failed to generate audio summary:", err);
+          })
+          .finally(() => {
+            setIsGeneratingAudio(false);
+          });
       }).catch(err => {
         console.error("Failed to generate summary:", err);
         setSummary("Could not load AI insights at the moment.");
-      }).finally(() => {
         setIsGeneratingSummary(false);
+        setIsGeneratingAudio(false);
       });
     }
   }, [stats, upcomingTasks.length]);
@@ -163,12 +185,28 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-6 grid gap-6">
+      <audio ref={audioRef} src={summaryAudio || undefined} className="hidden" />
       <Card className="col-span-full">
         <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Wand2 className="h-5 w-5 text-primary" />
-              AI-Powered Insights
-            </CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wand2 className="h-5 w-5 text-primary" />
+                AI-Powered Insights
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => audioRef.current?.play()}
+                disabled={isGeneratingAudio || !summaryAudio}
+                aria-label="Play audio summary"
+              >
+                {isGeneratingAudio ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                    <Volume2 className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
         </CardHeader>
         <CardContent>
           {isGeneratingSummary ? (

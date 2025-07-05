@@ -18,14 +18,18 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Calendar as CalendarIcon } from 'lucide-react';
-import type { Task, Status } from '@/lib/types';
+import { Trash2, Calendar as CalendarIcon, Wand2, Loader2, Plus } from 'lucide-react';
+import type { Task, Status, Subtask } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ScrollArea } from './ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Separator } from './ui/separator';
+import { Checkbox } from './ui/checkbox';
+import { generateSubtasks } from '@/ai/flows/generate-subtasks';
+
 
 const statuses: Status[] = ["To Do", "In Progress", "Done"];
 
@@ -35,6 +39,11 @@ const taskSchema = z.object({
   priority: z.enum(["Low", "Medium", "High"]),
   status: z.enum(["To Do", "In Progress", "Done"]),
   dueDate: z.date().optional(),
+  subtasks: z.array(z.object({
+    id: z.string(),
+    text: z.string(),
+    completed: z.boolean(),
+  })).optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -49,6 +58,8 @@ interface TaskDetailsDialogProps {
 
 export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteTask }: TaskDetailsDialogProps) {
   const { toast } = useToast();
+  const [newSubtaskText, setNewSubtaskText] = useState('');
+  const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -57,7 +68,8 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
       description: task.description,
       priority: task.priority,
       status: task.status,
-      dueDate: task.dueDate ? new Date(task.dueDate) : undefined
+      dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+      subtasks: task.subtasks || []
     }), [task])
   });
 
@@ -67,9 +79,10 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
       description: task.description,
       priority: task.priority,
       status: task.status,
-      dueDate: task.dueDate ? new Date(task.dueDate) : undefined
+      dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+      subtasks: task.subtasks || []
     });
-  }, [task, form]);
+  }, [task, form, isOpen]);
 
   const handleDeleteTask = () => {
     deleteTask(task.id);
@@ -89,18 +102,69 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
     })
   };
 
+  const handleGenerateSubtasks = async () => {
+    setIsGeneratingSubtasks(true);
+    try {
+      const result = await generateSubtasks({
+        title: form.getValues('title'),
+        description: form.getValues('description') || '',
+      });
+      const newSubtasks: Subtask[] = result.subtasks.map((text) => ({
+        id: `gen-${Date.now()}-${Math.random()}`,
+        text,
+        completed: false,
+      }));
+      const currentSubtasks = form.getValues('subtasks') || [];
+      form.setValue('subtasks', [...currentSubtasks, ...newSubtasks]);
+    } catch (error) {
+      console.error("AI subtask generation failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to generate subtasks.",
+      });
+    } finally {
+      setIsGeneratingSubtasks(false);
+    }
+  };
+
+  const handleAddSubtask = () => {
+    if (newSubtaskText.trim() === '') return;
+    const newSubtask: Subtask = {
+      id: `man-${Date.now()}`,
+      text: newSubtaskText.trim(),
+      completed: false,
+    };
+    const currentSubtasks = form.getValues('subtasks') || [];
+    form.setValue('subtasks', [...currentSubtasks, newSubtask]);
+    setNewSubtaskText('');
+  };
+
+  const handleToggleSubtask = (subtaskId: string) => {
+    const currentSubtasks = form.getValues('subtasks') || [];
+    const updatedSubtasks = currentSubtasks.map(s => s.id === subtaskId ? { ...s, completed: !s.completed } : s);
+    form.setValue('subtasks', updatedSubtasks);
+  };
+  
+  const handleDeleteSubtask = (subtaskId: string) => {
+    const currentSubtasks = form.getValues('subtasks') || [];
+    const updatedSubtasks = currentSubtasks.filter(s => s.id !== subtaskId);
+    form.setValue('subtasks', updatedSubtasks);
+  };
+
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Task Details</DialogTitle>
           <DialogDescription>
-            View, edit, or delete this task.
+            View, edit, or delete this task. Add subtasks to break down your work.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow pr-6 -mr-6">
         <Form {...form}>
-          <form id="task-details-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form id="task-details-form" className="space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -193,6 +257,57 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                   )}
                 />
             </div>
+            
+            <Separator />
+            
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <FormLabel>Subtasks</FormLabel>
+                <Button type="button" variant="outline" size="sm" onClick={handleGenerateSubtasks} disabled={isGeneratingSubtasks}>
+                  {isGeneratingSubtasks ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                  Suggest with AI
+                </Button>
+              </div>
+              <div className="pl-1 space-y-2 max-h-40 overflow-y-auto pr-2">
+                {(form.watch('subtasks') || []).map((subtask) => (
+                  <div key={subtask.id} className="flex items-center gap-3 group">
+                    <Checkbox
+                      id={`subtask-${subtask.id}`}
+                      checked={subtask.completed}
+                      onCheckedChange={() => handleToggleSubtask(subtask.id)}
+                    />
+                    <label
+                      htmlFor={`subtask-${subtask.id}`}
+                      className={cn("flex-1 text-sm cursor-pointer", subtask.completed && "line-through text-muted-foreground")}
+                    >
+                      {subtask.text}
+                    </label>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                        onClick={() => handleDeleteSubtask(subtask.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                ))}
+                 {(form.watch('subtasks') || []).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No subtasks yet. Add one below or use AI!</p>
+                  )}
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                 <Input 
+                    value={newSubtaskText} 
+                    onChange={(e) => setNewSubtaskText(e.target.value)} 
+                    onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
+                    placeholder="Add a new subtask and press Enter"
+                  />
+                  <Button type="button" size="icon" onClick={handleAddSubtask}><Plus className="h-4 w-4"/></Button>
+              </div>
+            </div>
+
           </form>
         </Form>
         </ScrollArea>

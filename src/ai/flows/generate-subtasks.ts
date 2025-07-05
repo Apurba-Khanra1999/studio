@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import {z} from 'genkit';
 
 const GenerateSubtasksInputSchema = z.object({
   title: z.string().describe('The title of the main task.'),

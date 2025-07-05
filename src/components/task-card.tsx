@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Task, Priority } from '@/lib/types';
-import { ArrowDown, ArrowUp, Calendar, CheckCircle2, Minus } from 'lucide-react';
+import { ArrowDown, ArrowUp, Calendar, Minus, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { TaskDetailsDialog } from './task-details-dialog';
@@ -39,6 +39,9 @@ export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     e.currentTarget.style.opacity = '1';
   };
+  
+  const completedSubtasks = (task.subtasks || []).filter(s => s.completed).length;
+  const totalSubtasks = (task.subtasks || []).length;
 
   return (
     <>
@@ -69,6 +72,12 @@ export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
                 <Calendar className="h-4 w-4" />
                 <span>{format(new Date(task.dueDate), "MMM d")}</span>
               </div>
+            )}
+             {totalSubtasks > 0 && (
+              <Badge variant="outline" className="flex items-center gap-1.5 font-normal">
+                <ListChecks className="h-3.5 w-3.5" />
+                <span>{completedSubtasks}/{totalSubtasks}</span>
+              </Badge>
             )}
           </div>
         </CardFooter>

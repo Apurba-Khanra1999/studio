@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Task, Status, Priority } from '@/lib/types';
+import type { Task, Status, Priority, Subtask } from '@/lib/types';
 
 const LOCAL_STORAGE_KEY = 'taskflow-tasks';
 
@@ -12,7 +12,12 @@ const initialTasks: Task[] = [
       description: 'Create a modern and responsive design for the new landing page, focusing on user engagement and conversion.',
       status: 'To Do',
       priority: 'High',
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 7))
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 7)),
+      subtasks: [
+        { id: 'sub-1-1', text: 'Define color palette', completed: true },
+        { id: 'sub-1-2', text: 'Create wireframes', completed: true },
+        { id: 'sub-1-3', text: 'Design hero section', completed: false },
+      ]
     },
     {
       id: 'task-2',
@@ -20,6 +25,7 @@ const initialTasks: Task[] = [
       description: 'Implement secure user authentication using JWT and password hashing. Include sign-up, login, and logout functionality.',
       status: 'In Progress',
       priority: 'High',
+      subtasks: []
     },
     {
       id: 'task-3',
@@ -27,6 +33,7 @@ const initialTasks: Task[] = [
       description: 'Configure a continuous integration and continuous deployment pipeline to automate testing and deployment.',
       status: 'In Progress',
       priority: 'Medium',
+      subtasks: []
     },
     {
       id: 'task-4',
@@ -34,7 +41,8 @@ const initialTasks: Task[] = [
       description: 'Create comprehensive documentation for all API endpoints, including request/response examples.',
       status: 'Done',
       priority: 'Medium',
-      dueDate: new Date(new Date().setDate(new Date().getDate() - 5))
+      dueDate: new Date(new Date().setDate(new Date().getDate() - 5)),
+      subtasks: []
     },
     {
       id: 'task-5',
@@ -42,6 +50,7 @@ const initialTasks: Task[] = [
       description: 'Add the new social media links and privacy policy link to the website footer.',
       status: 'To Do',
       priority: 'Low',
+      subtasks: []
     }
   ];
 
@@ -61,6 +70,14 @@ export function useTasks() {
             }
             return value;
         });
+
+        if (Array.isArray(parsedTasks)) {
+          parsedTasks = parsedTasks.map(task => ({
+            ...task,
+            subtasks: task.subtasks || []
+          }));
+        }
+
         if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
             setTasks(parsedTasks);
         } else {
@@ -90,7 +107,8 @@ export function useTasks() {
     const newTask: Task = {
       id: `task-${generateId()}`,
       status: 'To Do',
-      ...newTaskData
+      ...newTaskData,
+      subtasks: []
     };
     setTasks(prevTasks => [newTask, ...prevTasks]);
   }, []);

@@ -128,6 +128,8 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
     })
   };
 
+  const subtasks = task.subtasks || [];
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
@@ -139,7 +141,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
         </DialogHeader>
         <ScrollArea className="flex-grow pr-6 -mr-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form id="task-details-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="title"
@@ -241,7 +243,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                     </Button>
                 </div>
                 <div className="space-y-2">
-                    {task.subtasks.map(subtask => (
+                    {subtasks.map(subtask => (
                         <div key={subtask.id} className="flex items-center gap-2 group">
                             <Checkbox id={subtask.id} checked={subtask.completed} onCheckedChange={() => toggleSubtask(task.id, subtask.id)} />
                             <label htmlFor={subtask.id} className={cn("flex-grow text-sm", subtask.completed && "line-through text-muted-foreground")}>{subtask.text}</label>

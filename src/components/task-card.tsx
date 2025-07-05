@@ -43,7 +43,8 @@ export function TaskCard({ task, ...props }: TaskCardProps) {
     e.currentTarget.style.opacity = '1';
   };
 
-  const completedSubtasks = task.subtasks.filter(s => s.completed).length;
+  const subtasks = task.subtasks || [];
+  const completedSubtasks = subtasks.filter(s => s.completed).length;
 
   return (
     <>
@@ -76,10 +77,10 @@ export function TaskCard({ task, ...props }: TaskCardProps) {
               </div>
             )}
           </div>
-          {task.subtasks.length > 0 && (
+          {subtasks.length > 0 && (
             <div className="flex items-center gap-1">
               <CheckCircle2 className="h-4 w-4" />
-              <span>{completedSubtasks}/{task.subtasks.length}</span>
+              <span>{completedSubtasks}/{subtasks.length}</span>
             </div>
           )}
         </CardFooter>

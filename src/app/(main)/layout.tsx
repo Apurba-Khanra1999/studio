@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NewTaskDialog } from '@/components/new-task-dialog';
 import { useTasks } from '@/hooks/use-tasks';
-import { KanbanSquare, LayoutDashboard } from 'lucide-react';
+import { KanbanSquare, LayoutDashboard, Calendar } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -18,7 +18,8 @@ export default function MainLayout({
 
   const navLinks = [
     { href: "/board", label: "Board", icon: KanbanSquare },
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard",label: "Dashboard", icon: LayoutDashboard },
+    { href: "/calendar", label: "Calendar", icon: Calendar },
   ];
 
   return (

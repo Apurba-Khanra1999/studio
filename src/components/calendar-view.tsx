@@ -41,12 +41,13 @@ const statusIcons: Record<Status, React.ReactNode> = {
 
 const CalendarTaskItem = ({ task, onSelect }: { task: Task, onSelect: () => void }) => (
   <button onClick={onSelect} className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors block border-b last:border-b-0">
-    <div className="flex items-center gap-3">
-        <div className="flex-shrink-0">
+    <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 pt-0.5">
             {statusIcons[task.status]}
         </div>
         <div className="flex-1 overflow-hidden">
             <p className="font-semibold text-sm truncate">{task.title}</p>
+            <p className="text-xs text-muted-foreground">{task.status}</p>
         </div>
         <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1 font-semibold text-xs", priorityStyles[task.priority])}>
             {priorityIcons[task.priority]}

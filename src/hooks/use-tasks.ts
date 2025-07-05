@@ -81,14 +81,14 @@ export function useTasks() {
         if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
             setTasks(parsedTasks);
         } else {
-            setTasks(initialTasks);
+            setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
         }
       } else {
-        setTasks(initialTasks);
+        setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
       }
     } catch (error) {
       console.error("Failed to load tasks from localStorage", error);
-      setTasks(initialTasks);
+      setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
     }
     setIsInitialized(true);
   }, []);
@@ -103,12 +103,11 @@ export function useTasks() {
     }
   }, [tasks, isInitialized]);
 
-  const addTask = useCallback((newTaskData: { title: string; description: string; priority: Priority; dueDate?: Date }) => {
+  const addTask = useCallback((newTaskData: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[] }) => {
     const newTask: Task = {
       id: `task-${generateId()}`,
       status: 'To Do',
       ...newTaskData,
-      subtasks: []
     };
     setTasks(prevTasks => [newTask, ...prevTasks]);
   }, []);

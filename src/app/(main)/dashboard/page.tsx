@@ -1,13 +1,18 @@
 "use client";
 
 import * as React from 'react';
-import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, YAxis, XAxis } from 'recharts';
 import { useTasks } from '@/hooks/use-tasks';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, ListTodo, Loader2, AlertTriangle, BookCheck, Clock } from 'lucide-react';
-import { isPast } from 'date-fns';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle, ListTodo, Loader2, AlertTriangle, Goal, CalendarClock } from 'lucide-react';
+import { isPast, isFuture, differenceInDays, formatDistanceToNow } from 'date-fns';
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import type { Task, Priority } from '@/lib/types';
+
 
 const statusChartConfig = {
   count: {
@@ -45,21 +50,52 @@ const priorityChartConfig = {
   },
 } satisfies ChartConfig;
 
+const priorityStyles: Record<Priority, string> = {
+  High: "text-destructive border-destructive/30 bg-destructive/10",
+  Medium: "text-amber-600 border-amber-500/30 bg-amber-500/10 dark:text-amber-400 dark:border-amber-400/30 dark:bg-amber-400/10",
+  Low: "text-muted-foreground border-border bg-muted",
+};
+
+const TaskListItem = ({ task }: { task: Task }) => (
+  <div className="flex items-center justify-between gap-4 py-2 border-b border-border/50 last:border-b-0">
+    <span className="font-medium text-sm truncate flex-1">{task.title}</span>
+    <div className="flex items-center gap-2 flex-shrink-0">
+      <Badge variant="outline" className={cn("text-xs w-16 justify-center", priorityStyles[task.priority])}>{task.priority}</Badge>
+      {task.dueDate && (
+        <span className="text-xs text-muted-foreground w-24 text-right">
+          {formatDistanceToNow(new Date(task.dueDate), { addSuffix: true })}
+        </span>
+      )}
+    </div>
+  </div>
+);
 
 export default function DashboardPage() {
   const { tasks, isInitialized } = useTasks();
 
-  const stats = React.useMemo(() => {
-    if (!isInitialized) return null;
-    const overdueTasks = tasks.filter(task => task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'Done').length;
-    const completedTasks = tasks.filter(task => task.status === 'Done').length;
-    return {
-      total: tasks.length,
+  const { stats, upcomingTasks, overdueTasksList } = React.useMemo(() => {
+    if (!isInitialized) return { stats: null, upcomingTasks: [], overdueTasksList: [] };
+    
+    const totalTasks = tasks.length;
+    const overdueTasks = tasks.filter(task => task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'Done');
+    const completedTasksCount = tasks.filter(task => task.status === 'Done').length;
+    
+    const upcoming = tasks
+      .filter(task => task.dueDate && isFuture(new Date(task.dueDate)) && differenceInDays(new Date(task.dueDate), new Date()) <= 7 && task.status !== 'Done')
+      .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+      
+    const overdue = overdueTasks.sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+
+    const calculatedStats = {
+      total: totalTasks,
       todo: tasks.filter(t => t.status === 'To Do').length,
       inProgress: tasks.filter(t => t.status === 'In Progress').length,
-      done: completedTasks,
-      overdue: overdueTasks,
+      done: completedTasksCount,
+      overdue: overdueTasks.length,
+      completionRate: totalTasks > 0 ? Math.round((completedTasksCount / totalTasks) * 100) : 0,
     };
+
+    return { stats: calculatedStats, upcomingTasks: upcoming, overdueTasksList: overdue };
   }, [tasks, isInitialized]);
 
   const tasksByStatusData = React.useMemo(() => {
@@ -86,12 +122,16 @@ export default function DashboardPage() {
   if (!isInitialized || !stats) {
     return (
       <div className="p-4 md:p-6 grid gap-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32" />)}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-32" />)}
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <Skeleton className="h-[350px]" />
           <Skeleton className="h-[350px]" />
+        </div>
+         <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-[300px]" />
+          <Skeleton className="h-[300px]" />
         </div>
       </div>
     );
@@ -99,7 +139,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-6 grid gap-6">
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
@@ -112,6 +152,16 @@ export default function DashboardPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.inProgress}</div>
+              <p className="text-xs text-muted-foreground">Tasks being actively worked on</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Completed</CardTitle>
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -120,24 +170,24 @@ export default function DashboardPage() {
               <p className="text-xs text-muted-foreground">Tasks marked as done</p>
             </CardContent>
           </Card>
-           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.inProgress}</div>
-              <p className="text-xs text-muted-foreground">Tasks you are currently working on</p>
-            </CardContent>
-          </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Overdue Tasks</CardTitle>
+              <CardTitle className="text-sm font-medium">Overdue</CardTitle>
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{stats.overdue}</div>
               <p className="text-xs text-muted-foreground">Tasks past their due date</p>
+            </CardContent>
+          </Card>
+          <Card>
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+              <Goal className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold mb-2">{stats.completionRate}%</div>
+                <Progress value={stats.completionRate} aria-label={`${stats.completionRate}% of tasks completed`} />
             </CardContent>
           </Card>
         </div>
@@ -146,14 +196,16 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Tasks by Status</CardTitle>
+            <CardDescription>Distribution of tasks across different statuses.</CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={statusChartConfig} className="min-h-[250px] w-full">
-                <BarChart data={tasksByStatusData} accessibilityLayer>
+                <BarChart data={tasksByStatusData} accessibilityLayer margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="status" tickLine={false} tickMargin={10} axisLine={false} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={10} allowDecimals={false} />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="count" radius={4}>
+                  <Bar dataKey="count" radius={4} fill="var(--color-To Do)">
                     {tasksByStatusData.map((entry) => (
                         <Bar key={entry.status} dataKey="count" name={entry.status} fill={statusChartConfig[entry.status as keyof typeof statusChartConfig].color} />
                     ))}
@@ -165,17 +217,70 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Tasks by Priority</CardTitle>
+            <CardDescription>Breakdown of tasks by their assigned priority.</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
              <ChartContainer config={priorityChartConfig} className="min-h-[250px] w-full">
                 <PieChart accessibilityLayer>
                   <ChartTooltip content={<ChartTooltipContent nameKey="tasks" />} />
-                  <Pie data={tasksByPriorityData} dataKey="tasks" nameKey="name" cx="50%" cy="50%" outerRadius={80} />
+                  <Pie data={tasksByPriorityData} dataKey="tasks" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                        return (
+                          <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+                            {`${(percent * 100).toFixed(0)}%`}
+                          </text>
+                        );
+                      }} />
                    <ChartLegend content={<ChartLegendContent nameKey="name" />} />
                 </PieChart>
               </ChartContainer>
           </CardContent>
         </Card>
+      </div>
+
+       <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <CalendarClock className="h-5 w-5 text-primary" />
+                    Upcoming Deadlines
+                  </CardTitle>
+                  <CardDescription>Tasks that are due in the next 7 days.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  {upcomingTasks.length > 0 ? (
+                      <div className="space-y-1">
+                          {upcomingTasks.map(task => <TaskListItem key={task.id} task={task} />)}
+                      </div>
+                  ) : (
+                      <div className="text-sm text-muted-foreground text-center py-8">
+                        <p>No upcoming tasks. Great job!</p>
+                      </div>
+                  )}
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                    Overdue Tasks
+                  </CardTitle>
+                  <CardDescription>These tasks have passed their due date and are not completed.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  {overdueTasksList.length > 0 ? (
+                      <div className="space-y-1">
+                           {overdueTasksList.map(task => <TaskListItem key={task.id} task={task} />)}
+                      </div>
+                  ) : (
+                      <div className="text-sm text-muted-foreground text-center py-8">
+                        <p>No overdue tasks. Phew!</p>
+                      </div>
+                  )}
+              </CardContent>
+          </Card>
       </div>
     </div>
   );

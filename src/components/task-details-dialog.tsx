@@ -24,7 +24,6 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { ScrollArea } from './ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
@@ -155,163 +154,165 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-4 flex-shrink-0">
           <DialogTitle>Task Details</DialogTitle>
           <DialogDescription>
             View, edit, or delete this task. Add subtasks to break down your work.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow pr-6 -mr-6">
-        <Form {...form}>
-          <form id="task-details-form" className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      className="resize-none"
-                      rows={4}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Low">Low</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="High">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-               <FormField
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-6 pb-6">
+            <Form {...form}>
+              <form id="task-details-form" className="space-y-4">
+                <FormField
                   control={form.control}
-                  name="dueDate"
+                  name="title"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Due Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
-                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
-                        </PopoverContent>
-                      </Popover>
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-            </div>
-            
-            <Separator />
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <FormLabel>Subtasks</FormLabel>
-                <Button type="button" variant="outline" size="sm" onClick={handleGenerateSubtasks} disabled={isGeneratingSubtasks}>
-                  {isGeneratingSubtasks ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                  Suggest with AI
-                </Button>
-              </div>
-              <div className="pl-1 space-y-2 max-h-40 overflow-y-auto pr-2">
-                {(form.watch('subtasks') || []).map((subtask) => (
-                  <div key={subtask.id} className="flex items-center gap-3 group">
-                    <Checkbox
-                      id={`subtask-${subtask.id}`}
-                      checked={subtask.completed}
-                      onCheckedChange={() => handleToggleSubtask(subtask.id)}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="resize-none"
+                          rows={4}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Low">Low</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="High">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                      control={form.control}
+                      name="dueDate"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Due Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>
+                                  {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus/>
+                            </PopoverContent>
+                          </Popover>
+                        </FormItem>
+                      )}
                     />
-                    <label
-                      htmlFor={`subtask-${subtask.id}`}
-                      className={cn("flex-1 text-sm cursor-pointer", subtask.completed && "line-through text-muted-foreground")}
-                    >
-                      {subtask.text}
-                    </label>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleDeleteSubtask(subtask.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                </div>
+                
+                <Separator />
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <FormLabel>Subtasks</FormLabel>
+                    <Button type="button" variant="outline" size="sm" onClick={handleGenerateSubtasks} disabled={isGeneratingSubtasks}>
+                      {isGeneratingSubtasks ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                      Suggest with AI
                     </Button>
                   </div>
-                ))}
-                 {(form.watch('subtasks') || []).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">No subtasks yet. Add one below or use AI!</p>
-                  )}
-              </div>
-              <div className="flex items-center gap-2 pt-2">
-                 <Input 
-                    value={newSubtaskText} 
-                    onChange={(e) => setNewSubtaskText(e.target.value)} 
-                    onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
-                    placeholder="Add a new subtask and press Enter"
-                  />
-                  <Button type="button" size="icon" onClick={handleAddSubtask}><Plus className="h-4 w-4"/></Button>
-              </div>
-            </div>
+                  <div className="pl-1 space-y-2 max-h-40 overflow-y-auto pr-2">
+                    {(form.watch('subtasks') || []).map((subtask) => (
+                      <div key={subtask.id} className="flex items-center gap-3 group">
+                        <Checkbox
+                          id={`subtask-${subtask.id}`}
+                          checked={subtask.completed}
+                          onCheckedChange={() => handleToggleSubtask(subtask.id)}
+                        />
+                        <label
+                          htmlFor={`subtask-${subtask.id}`}
+                          className={cn("flex-1 text-sm cursor-pointer", subtask.completed && "line-through text-muted-foreground")}
+                        >
+                          {subtask.text}
+                        </label>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                            onClick={() => handleDeleteSubtask(subtask.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))}
+                     {(form.watch('subtasks') || []).length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No subtasks yet. Add one below or use AI!</p>
+                      )}
+                  </div>
+                  <div className="flex items-center gap-2 pt-2">
+                     <Input 
+                        value={newSubtaskText} 
+                        onChange={(e) => setNewSubtaskText(e.target.value)} 
+                        onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
+                        placeholder="Add a new subtask and press Enter"
+                      />
+                      <Button type="button" size="icon" onClick={handleAddSubtask}><Plus className="h-4 w-4"/></Button>
+                  </div>
+                </div>
 
-          </form>
-        </Form>
-        </ScrollArea>
-        <DialogFooter className="pt-4 border-t">
+              </form>
+            </Form>
+          </div>
+        </div>
+        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                      <Button type="button" variant="destructive" className="mr-auto">

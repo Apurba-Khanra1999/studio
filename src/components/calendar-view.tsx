@@ -8,9 +8,10 @@ import { TaskDetailsDialog } from '@/components/task-details-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { Task, Priority } from '@/lib/types';
+import type { Task, Priority, Status } from '@/lib/types';
 import { isSameDay, format } from 'date-fns';
-import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import type { DayContentProps } from 'react-day-picker';
+import { ArrowDown, ArrowUp, Minus, ListTodo, Loader2, CheckCircle2, CalendarCheck } from 'lucide-react';
 
 interface CalendarViewProps {
   tasks: Task[];
@@ -31,16 +32,27 @@ const priorityStyles: Record<Priority, string> = {
   Low: "text-muted-foreground border-border bg-muted hover:bg-muted/80",
 };
 
+const statusIcons: Record<Status, React.ReactNode> = {
+  'To Do': <ListTodo className="h-4 w-4 text-muted-foreground" />,
+  'In Progress': <Loader2 className="h-4 w-4 animate-spin text-[hsl(var(--chart-2))]" />,
+  'Done': <CheckCircle2 className="h-4 w-4 text-[hsl(var(--chart-3))]" />,
+};
+
+
 const CalendarTaskItem = ({ task, onSelect }: { task: Task, onSelect: () => void }) => (
   <button onClick={onSelect} className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors block border-b last:border-b-0">
-    <div className="flex justify-between items-start">
-      <p className="font-semibold text-sm truncate pr-2">{task.title}</p>
-      <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1 font-semibold text-xs", priorityStyles[task.priority])}>
-        {priorityIcons[task.priority]}
-        {task.priority}
-      </Badge>
+    <div className="flex items-center gap-3">
+        <div className="flex-shrink-0">
+            {statusIcons[task.status]}
+        </div>
+        <div className="flex-1 overflow-hidden">
+            <p className="font-semibold text-sm truncate">{task.title}</p>
+        </div>
+        <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1 font-semibold text-xs", priorityStyles[task.priority])}>
+            {priorityIcons[task.priority]}
+            {task.priority}
+        </Badge>
     </div>
-    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{task.description}</p>
   </button>
 );
 
@@ -55,24 +67,39 @@ export function CalendarView({ tasks, updateTask, deleteTask, isInitialized }: C
   const tasksForSelectedDay = React.useMemo(() => {
     if (!selectedDate) return [];
     return tasksWithDueDate
-      .filter(task => task.dueDate && isSameDay(task.dueDate, selectedDate))
-      .sort((a,b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime());
+      .filter(task => task.dueDate && isSameDay(new Date(task.dueDate), selectedDate))
+      .sort((a,b) => {
+          const statusOrder: Record<Status, number> = { "In Progress": 1, "To Do": 2, "Done": 3 };
+          return statusOrder[a.status] - statusOrder[b.status];
+      });
   }, [tasksWithDueDate, selectedDate]);
   
   const handleTaskSelect = (task: Task) => {
     setSelectedTask(task);
     setIsDialogOpen(true);
   };
+  
+  const DayWithDot = React.useCallback(({ date, activeModifiers }: DayContentProps) => {
+    const dayTasks = tasksWithDueDate.filter(task => task.dueDate && isSameDay(new Date(task.dueDate), date));
+    
+    return (
+        <div className="relative h-full w-full flex items-center justify-center">
+            {format(date, 'd')}
+            {dayTasks.length > 0 && !activeModifiers.selected && (
+                <div className="absolute bottom-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
+            )}
+        </div>
+    );
+  }, [tasksWithDueDate]);
 
   if (!isInitialized) {
     return (
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 h-full">
-        <div className="lg:col-span-2">
-          <Skeleton className="h-[500px] w-full" />
-        </div>
-        <div>
-          <Skeleton className="h-8 w-1/2 mb-4" />
-          <Skeleton className="h-20 w-full mb-2" />
+      <div className="grid md:grid-cols-2 gap-6 h-full">
+        <Skeleton className="h-[500px] w-full" />
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-8 w-1/2" />
+          <Skeleton className="h-20 w-full" />
+          <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
         </div>
       </div>
@@ -90,11 +117,11 @@ export function CalendarView({ tasks, updateTask, deleteTask, isInitialized }: C
           deleteTask={deleteTask}
         />
       )}
-       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 h-full max-h-[calc(100vh-8rem)]">
-        <Card className="lg:col-span-2 h-full flex flex-col">
+       <div className="grid md:grid-cols-2 gap-6 h-full max-h-[calc(100vh-10rem)]">
+        <Card className="h-full flex flex-col">
           <CardHeader>
              <CardTitle>Calendar</CardTitle>
-             <CardDescription>Tasks with due dates are shown here. Click a date to see tasks.</CardDescription>
+             <CardDescription>Click a date to see tasks with due dates.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex justify-center items-start pt-0">
             <Calendar
@@ -106,14 +133,8 @@ export function CalendarView({ tasks, updateTask, deleteTask, isInitialized }: C
                 day_selected: "bg-primary text-primary-foreground hover:bg-primary/90 focus:bg-primary/90",
                 day_today: "bg-accent text-accent-foreground",
               }}
-              modifiers={{
-                due: tasksWithDueDate.map(task => task.dueDate!),
-              }}
-              modifiersStyles={{
-                due: {
-                  border: `2px solid hsl(var(--primary))`,
-                  borderRadius: '9999px',
-                },
+              components={{
+                DayContent: DayWithDot
               }}
             />
           </CardContent>
@@ -124,7 +145,9 @@ export function CalendarView({ tasks, updateTask, deleteTask, isInitialized }: C
             <CardTitle>
               {selectedDate ? format(selectedDate, 'MMMM d, yyyy') : 'No date selected'}
             </CardTitle>
-            <CardDescription>Tasks due on this day.</CardDescription>
+            <CardDescription>
+              {selectedDate ? `${tasksForSelectedDay.length} task(s) due on this day.` : 'Select a day to see tasks.'}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0 flex-1">
             <ScrollArea className="h-full">
@@ -134,7 +157,8 @@ export function CalendarView({ tasks, updateTask, deleteTask, isInitialized }: C
                     <CalendarTaskItem key={task.id} task={task} onSelect={() => handleTaskSelect(task)} />
                   ))
                 ) : (
-                  <div className="text-center text-sm text-muted-foreground py-16 px-4">
+                  <div className="text-center text-sm text-muted-foreground py-16 px-4 flex flex-col items-center justify-center gap-4">
+                    <CalendarCheck className="h-12 w-12 text-muted-foreground/50" />
                     <p>{selectedDate ? "No tasks due on this day." : "Select a day to see tasks."}</p>
                   </div>
                 )}

@@ -7,11 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, ListTodo, Loader2, AlertTriangle, Goal, CalendarClock } from 'lucide-react';
+import { CheckCircle, ListTodo, Loader2, AlertTriangle, Goal, CalendarClock, Wand2 } from 'lucide-react';
 import { isPast, isFuture, differenceInDays, formatDistanceToNow } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Task, Priority } from '@/lib/types';
+import { generateDashboardSummary } from '@/ai/flows/generate-dashboard-summary';
 
 
 const statusChartConfig = {
@@ -72,6 +73,8 @@ const TaskListItem = ({ task }: { task: Task }) => (
 
 export default function DashboardPage() {
   const { tasks, isInitialized } = useTasks();
+  const [summary, setSummary] = React.useState("");
+  const [isGeneratingSummary, setIsGeneratingSummary] = React.useState(true);
 
   const { stats, upcomingTasks, overdueTasksList } = React.useMemo(() => {
     if (!isInitialized) return { stats: null, upcomingTasks: [], overdueTasksList: [] };
@@ -97,6 +100,26 @@ export default function DashboardPage() {
 
     return { stats: calculatedStats, upcomingTasks: upcoming, overdueTasksList: overdue };
   }, [tasks, isInitialized]);
+  
+  React.useEffect(() => {
+    if (stats) {
+      setIsGeneratingSummary(true);
+      generateDashboardSummary({
+        totalTasks: stats.total,
+        completedTasks: stats.done,
+        overdueTasks: stats.overdue,
+        upcomingTasks: upcomingTasks.length,
+      }).then(result => {
+        setSummary(result.summary);
+      }).catch(err => {
+        console.error("Failed to generate summary:", err);
+        setSummary("Could not load AI insights at the moment.");
+      }).finally(() => {
+        setIsGeneratingSummary(false);
+      });
+    }
+  }, [stats, upcomingTasks.length]);
+
 
   const tasksByStatusData = React.useMemo(() => {
     if (!stats) return [];
@@ -122,6 +145,7 @@ export default function DashboardPage() {
   if (!isInitialized || !stats) {
     return (
       <div className="p-4 md:p-6 grid gap-6">
+        <Skeleton className="h-24 w-full" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-32" />)}
         </div>
@@ -139,11 +163,29 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-6 grid gap-6">
+      <Card className="col-span-full">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Wand2 className="h-5 w-5 text-primary" />
+              AI-Powered Insights
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isGeneratingSummary ? (
+              <Skeleton className="h-6 w-3/4" />
+          ) : (
+              <p className="text-sm text-foreground">{summary}</p>
+          )}
+        </CardContent>
+      </Card>
+      
        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-              <ListTodo className="h-4 w-4 text-muted-foreground" />
+               <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
+                <ListTodo className="h-5 w-5 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
@@ -153,7 +195,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[hsl(var(--chart-2))]/10">
+                <Loader2 className="h-5 w-5 text-[hsl(var(--chart-2))]" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.inProgress}</div>
@@ -163,7 +207,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[hsl(var(--chart-3))]/10">
+                <CheckCircle className="h-5 w-5 text-[hsl(var(--chart-3))]" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.done}</div>
@@ -173,7 +219,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-destructive/10">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{stats.overdue}</div>
@@ -183,7 +231,9 @@ export default function DashboardPage() {
           <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
-              <Goal className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[hsl(var(--chart-5))]/10">
+                <Goal className="h-5 w-5 text-[hsl(var(--chart-5))]" />
+              </div>
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold mb-2">{stats.completionRate}%</div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import type { Task, Status, Priority, Subtask } from '@/lib/types';
+import type { Task, Status, Priority } from '@/lib/types';
 import { KanbanColumn } from '@/components/kanban-column';
 import { Skeleton } from './ui/skeleton';
 
@@ -12,9 +12,6 @@ interface KanbanBoardProps {
   moveTask: (taskId: string, newStatus: Status) => void;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId: string) => void;
-  addSubtask: (taskId: string, subtaskText: string) => void;
-  deleteSubtask: (taskId: string, subtaskId: string) => void;
-  toggleSubtask: (taskId: string, subtaskId: string) => void;
   isInitialized: boolean;
 }
 
@@ -23,9 +20,6 @@ export function KanbanBoard({
   moveTask, 
   updateTask,
   deleteTask,
-  addSubtask,
-  deleteSubtask,
-  toggleSubtask,
   isInitialized 
 }: KanbanBoardProps) {
 
@@ -73,9 +67,6 @@ export function KanbanBoard({
             moveTask={moveTask}
             updateTask={updateTask}
             deleteTask={deleteTask}
-            addSubtask={addSubtask}
-            deleteSubtask={deleteSubtask}
-            toggleSubtask={toggleSubtask}
           />
         ))}
       </div>

@@ -9,9 +9,6 @@ export default function BoardPage() {
     updateTask,
     deleteTask,
     moveTask, 
-    addSubtask,
-    deleteSubtask,
-    toggleSubtask,
     isInitialized 
   } = useTasks();
 
@@ -21,9 +18,6 @@ export default function BoardPage() {
       moveTask={moveTask} 
       updateTask={updateTask}
       deleteTask={deleteTask}
-      addSubtask={addSubtask}
-      deleteSubtask={deleteSubtask}
-      toggleSubtask={toggleSubtask}
       isInitialized={isInitialized} 
     />
   );

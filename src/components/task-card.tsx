@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Task, Priority, Subtask } from '@/lib/types';
+import type { Task, Priority } from '@/lib/types';
 import { ArrowDown, ArrowUp, Calendar, CheckCircle2, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -13,9 +13,6 @@ interface TaskCardProps {
   task: Task;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId: string) => void;
-  addSubtask: (taskId: string, subtaskText: string) => void;
-  deleteSubtask: (taskId: string, subtaskId: string) => void;
-  toggleSubtask: (taskId: string, subtaskId: string) => void;
 }
 
 const priorityIcons: Record<Priority, React.ReactNode> = {
@@ -31,7 +28,7 @@ const priorityStyles: Record<Priority, string> = {
 };
 
 
-export function TaskCard({ task, ...props }: TaskCardProps) {
+export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -43,12 +40,9 @@ export function TaskCard({ task, ...props }: TaskCardProps) {
     e.currentTarget.style.opacity = '1';
   };
 
-  const subtasks = task.subtasks || [];
-  const completedSubtasks = subtasks.filter(s => s.completed).length;
-
   return (
     <>
-      <TaskDetailsDialog isOpen={isDetailsOpen} setIsOpen={setIsDetailsOpen} task={task} {...props} />
+      <TaskDetailsDialog isOpen={isDetailsOpen} setIsOpen={setIsDetailsOpen} task={task} updateTask={updateTask} deleteTask={deleteTask} />
       <Card
         draggable
         onDragStart={handleDragStart}
@@ -77,12 +71,6 @@ export function TaskCard({ task, ...props }: TaskCardProps) {
               </div>
             )}
           </div>
-          {subtasks.length > 0 && (
-            <div className="flex items-center gap-1 font-medium text-xs bg-muted px-2 py-1 rounded-md">
-              <CheckCircle2 className="h-4 w-4" />
-              <span>{completedSubtasks}/{subtasks.length}</span>
-            </div>
-          )}
         </CardFooter>
       </Card>
     </>

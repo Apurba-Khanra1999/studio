@@ -12,12 +12,9 @@ interface KanbanColumnProps {
   moveTask: (taskId: string, newStatus: Status) => void;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId: string) => void;
-  addSubtask: (taskId: string, subtaskText: string) => void;
-  deleteSubtask: (taskId: string, subtaskId: string) => void;
-  toggleSubtask: (taskId: string, subtaskId: string) => void;
 }
 
-export function KanbanColumn({ status, tasks, moveTask, ...props }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, moveTask, updateTask, deleteTask }: KanbanColumnProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -57,7 +54,7 @@ export function KanbanColumn({ status, tasks, moveTask, ...props }: KanbanColumn
       <ScrollArea className="h-[calc(100vh-14rem)] flex-1">
         <div className="flex flex-col gap-4 p-4">
           {tasks.length > 0 ? (
-            tasks.map(task => <TaskCard key={task.id} task={task} {...props} />)
+            tasks.map(task => <TaskCard key={task.id} task={task} updateTask={updateTask} deleteTask={deleteTask} />)
           ) : (
             <div className="flex h-32 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
               <p>Drag tasks here</p>

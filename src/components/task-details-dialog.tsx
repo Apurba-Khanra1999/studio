@@ -18,16 +18,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Wand2, Loader2, Plus, Trash2, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import type { Task, Status } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { generateSubtasks } from '@/ai/flows/generate-subtasks';
 
 const statuses: Status[] = ["To Do", "In Progress", "Done"];
 
@@ -47,14 +45,9 @@ interface TaskDetailsDialogProps {
   task: Task;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId:string) => void;
-  addSubtask: (taskId: string, subtaskText: string) => void;
-  deleteSubtask: (taskId: string, subtaskId: string) => void;
-  toggleSubtask: (taskId: string, subtaskId: string) => void;
 }
 
-export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteTask, addSubtask, deleteSubtask, toggleSubtask }: TaskDetailsDialogProps) {
-  const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
-  const [newSubtaskText, setNewSubtaskText] = useState("");
+export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteTask }: TaskDetailsDialogProps) {
   const { toast } = useToast();
 
   const form = useForm<TaskFormValues>({
@@ -78,37 +71,6 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
     });
   }, [task, form]);
 
-
-  const handleGenerateSubtasks = async () => {
-    setIsGeneratingSubtasks(true);
-    try {
-      const result = await generateSubtasks({ title: task.title, description: task.description || '' });
-      result.subtasks.forEach(subtaskText => {
-        addSubtask(task.id, subtaskText);
-      });
-      toast({
-          title: "AI Subtasks Added",
-          description: `${result.subtasks.length} subtasks have been generated.`
-      })
-    } catch (error) {
-      console.error("AI subtask generation failed:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to generate subtasks.",
-      });
-    } finally {
-      setIsGeneratingSubtasks(false);
-    }
-  };
-  
-  const handleAddSubtask = () => {
-    if (newSubtaskText.trim()) {
-        addSubtask(task.id, newSubtaskText.trim());
-        setNewSubtaskText("");
-    }
-  }
-
   const handleDeleteTask = () => {
     deleteTask(task.id);
     toast({
@@ -127,15 +89,13 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
     })
   };
 
-  const subtasks = task.subtasks || [];
-
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Task Details</DialogTitle>
           <DialogDescription>
-            View, edit, or delete this task. Manage subtasks below.
+            View, edit, or delete this task.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="flex-grow pr-6 -mr-6">
@@ -233,42 +193,6 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                   )}
                 />
             </div>
-             <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-foreground/80">Subtasks</h3>
-                    <Button type="button" variant="ghost" size="sm" onClick={handleGenerateSubtasks} disabled={isGeneratingSubtasks}>
-                        {isGeneratingSubtasks ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-                        Suggest
-                    </Button>
-                </div>
-                 <div className="space-y-2 rounded-md border bg-muted/50 p-3">
-                    {subtasks.length > 0 ? (
-                        subtasks.map(subtask => (
-                            <div key={subtask.id} className="flex items-center gap-2 group bg-background p-2 rounded-md shadow-sm">
-                                <Checkbox id={subtask.id} checked={subtask.completed} onCheckedChange={() => toggleSubtask(task.id, subtask.id)} />
-                                <label htmlFor={subtask.id} className={cn("flex-grow text-sm", subtask.completed && "line-through text-muted-foreground")}>{subtask.text}</label>
-                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteSubtask(task.id, subtask.id)}><X className="h-4 w-4" /></Button>
-                            </div>
-                        ))
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center py-2">No subtasks yet.</p>
-                    )}
-                </div>
-                 <div className="flex items-center gap-2">
-                    <Input 
-                      value={newSubtaskText} 
-                      onChange={(e) => setNewSubtaskText(e.target.value)} 
-                      placeholder="Add a new subtask..."
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleAddSubtask();
-                        }
-                      }}
-                    />
-                    <Button type="button" size="icon" onClick={handleAddSubtask}><Plus className="h-4 w-4"/></Button>
-                 </div>
-             </div>
           </form>
         </Form>
         </ScrollArea>
@@ -284,7 +208,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                     <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete this task and all its data.
+                        This action cannot be undone. This will permanently delete this task.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

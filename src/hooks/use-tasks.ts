@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Task, Status, Priority, Subtask } from '@/lib/types';
+import type { Task, Status, Priority } from '@/lib/types';
 
 const LOCAL_STORAGE_KEY = 'taskflow-tasks';
 
@@ -12,11 +12,6 @@ const initialTasks: Task[] = [
       description: 'Create a modern and responsive design for the new landing page, focusing on user engagement and conversion.',
       status: 'To Do',
       priority: 'High',
-      subtasks: [
-        { id: 'sub-1-1', text: 'Research competitor designs', completed: true },
-        { id: 'sub-1-2', text: 'Create wireframes', completed: false },
-        { id: 'sub-1-3', text: 'Develop mockups in Figma', completed: false },
-      ],
       dueDate: new Date(new Date().setDate(new Date().getDate() + 7))
     },
     {
@@ -25,7 +20,6 @@ const initialTasks: Task[] = [
       description: 'Implement secure user authentication using JWT and password hashing. Include sign-up, login, and logout functionality.',
       status: 'In Progress',
       priority: 'High',
-      subtasks: [],
     },
     {
       id: 'task-3',
@@ -33,11 +27,6 @@ const initialTasks: Task[] = [
       description: 'Configure a continuous integration and continuous deployment pipeline to automate testing and deployment.',
       status: 'In Progress',
       priority: 'Medium',
-      subtasks: [
-        { id: 'sub-3-1', text: 'Configure build server', completed: true },
-        { id: 'sub-3-2', text: 'Set up automated tests', completed: true },
-        { id: 'sub-3-3', text: 'Configure deployment script', completed: false },
-      ],
     },
     {
       id: 'task-4',
@@ -45,7 +34,6 @@ const initialTasks: Task[] = [
       description: 'Create comprehensive documentation for all API endpoints, including request/response examples.',
       status: 'Done',
       priority: 'Medium',
-      subtasks: [],
       dueDate: new Date(new Date().setDate(new Date().getDate() - 5))
     },
     {
@@ -54,7 +42,6 @@ const initialTasks: Task[] = [
       description: 'Add the new social media links and privacy policy link to the website footer.',
       status: 'To Do',
       priority: 'Low',
-      subtasks: [],
     }
   ];
 
@@ -75,8 +62,7 @@ export function useTasks() {
             return value;
         });
         if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
-            const sanitizedTasks = parsedTasks.map(task => ({ ...task, subtasks: task.subtasks || [] }));
-            setTasks(sanitizedTasks);
+            setTasks(parsedTasks);
         } else {
             setTasks(initialTasks);
         }
@@ -104,7 +90,6 @@ export function useTasks() {
     const newTask: Task = {
       id: `task-${generateId()}`,
       status: 'To Do',
-      subtasks: [],
       ...newTaskData
     };
     setTasks(prevTasks => [newTask, ...prevTasks]);
@@ -126,49 +111,5 @@ export function useTasks() {
     updateTask(taskId, { status: newStatus });
   }, [updateTask]);
 
-  const toggleSubtask = useCallback((taskId: string, subtaskId: string) => {
-    setTasks(prevTasks => prevTasks.map(task => {
-        if (task.id === taskId) {
-            return {
-                ...task,
-                subtasks: (task.subtasks || []).map(subtask => 
-                    subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask
-                )
-            };
-        }
-        return task;
-    }));
-  }, []);
-
-  const addSubtask = useCallback((taskId: string, subtaskText: string) => {
-    setTasks(prevTasks => prevTasks.map(task => {
-        if (task.id === taskId) {
-            const newSubtask: Subtask = {
-                id: `sub-${generateId()}`,
-                text: subtaskText,
-                completed: false
-            };
-            return {
-                ...task,
-                subtasks: [...(task.subtasks || []), newSubtask]
-            };
-        }
-        return task;
-    }));
-  }, []);
-
-  const deleteSubtask = useCallback((taskId: string, subtaskId: string) => {
-    setTasks(prevTasks => prevTasks.map(task => {
-        if (task.id === taskId) {
-            return {
-                ...task,
-                subtasks: (task.subtasks || []).filter(subtask => subtask.id !== subtaskId)
-            };
-        }
-        return task;
-    }));
-  }, []);
-
-
-  return { tasks, addTask, updateTask, deleteTask, moveTask, addSubtask, deleteSubtask, toggleSubtask, isInitialized };
+  return { tasks, addTask, updateTask, deleteTask, moveTask, isInitialized };
 }

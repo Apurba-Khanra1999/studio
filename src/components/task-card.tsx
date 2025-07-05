@@ -5,22 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import type { Task, Priority } from '@/lib/types';
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface TaskCardProps {
   task: Task;
 }
 
 const priorityIcons: Record<Priority, React.ReactNode> = {
-  Low: <ArrowDown className="h-4 w-4 text-green-500" />,
-  Medium: <Minus className="h-4 w-4 text-yellow-500" />,
-  High: <ArrowUp className="h-4 w-4 text-red-500" />,
+  Low: <ArrowDown className="h-4 w-4" />,
+  Medium: <Minus className="h-4 w-4" />,
+  High: <ArrowUp className="h-4 w-4" />,
 };
 
-const priorityColors: Record<Priority, string> = {
-    Low: 'bg-green-100 text-green-800 border-green-200',
-    Medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    High: 'bg-red-100 text-red-800 border-red-200'
-}
+const priorityStyles: Record<Priority, string> = {
+  High: "text-destructive border-destructive/30 bg-destructive/10 hover:bg-destructive/20",
+  Medium: "text-primary border-primary/40 bg-primary/10 hover:bg-primary/20",
+  Low: "text-muted-foreground border-border bg-muted hover:bg-muted/80",
+};
+
 
 export function TaskCard({ task }: TaskCardProps) {
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -40,9 +42,9 @@ export function TaskCard({ task }: TaskCardProps) {
       className="cursor-grab active:cursor-grabbing transition-shadow duration-200 hover:shadow-lg"
     >
       <CardHeader>
-        <CardTitle className="flex items-center justify-between text-base">
-            {task.title}
-             <Badge variant="outline" className={`flex items-center gap-1 ${priorityColors[task.priority]}`}>
+        <CardTitle className="flex items-start justify-between text-base gap-2">
+            <span className="flex-1">{task.title}</span>
+             <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1", priorityStyles[task.priority])}>
                 {priorityIcons[task.priority]}
                 {task.priority}
             </Badge>

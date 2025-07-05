@@ -63,8 +63,6 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     try {
       const result = await generateTaskDescription({ title });
       form.setValue("description", result.description);
-      // After description is generated, automatically determine priority
-      handleDeterminePriority(title, result.description);
     } catch (error) {
       console.error("AI description generation failed:", error);
       toast({
@@ -77,7 +75,15 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     }
   };
   
-  const handleDeterminePriority = async (title: string, description: string) => {
+  const handleDeterminePriority = async () => {
+    const title = form.getValues("title");
+    const description = form.getValues("description") || "";
+    
+    if (!title) {
+      form.setError("title", { message: "Please enter a title to suggest a priority." });
+      return;
+    }
+
     setIsDeterminingPriority(true);
     try {
       const result = await determineTaskPriority({ title, description });
@@ -116,7 +122,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
         <DialogHeader>
           <DialogTitle>Create a new task</DialogTitle>
           <DialogDescription>
-            Fill in the details below. You can use AI to help generate the description and set a priority.
+            Fill in the details below. Use AI to help generate the description and set a priority.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -128,15 +134,33 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
+                    <Input placeholder="e.g., Implement user authentication" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
                     <div className="relative">
-                      <Input placeholder="e.g., Implement user authentication" {...field} />
-                      <Button
+                      <Textarea
+                        placeholder="A detailed description of the task..."
+                        className="resize-none pr-10"
+                        rows={5}
+                        {...field}
+                      />
+                       <Button
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        className="absolute right-2 top-2 h-7 w-7"
                         onClick={handleGenerateDescription}
-                        disabled={isGeneratingDesc}
+                        disabled={isGeneratingDesc || !form.getValues("title")}
                         aria-label="Generate description with AI"
                       >
                         {isGeneratingDesc ? (
@@ -153,30 +177,26 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
             />
             <FormField
               control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="A detailed description of the task..."
-                      className="resize-none"
-                      rows={5}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    Priority
-                    {isDeterminingPriority && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                   <FormLabel className="flex items-center gap-2">
+                    <span>Priority</span>
+                     <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-5 w-5"
+                        onClick={handleDeterminePriority}
+                        disabled={isDeterminingPriority || !form.getValues("title")}
+                        aria-label="Suggest priority with AI"
+                      >
+                        {isDeterminingPriority ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Wand2 className="h-3 w-3" />
+                        )}
+                      </Button>
                   </FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                     <FormControl>

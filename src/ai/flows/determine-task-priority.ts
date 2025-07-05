@@ -36,6 +36,8 @@ const prompt = ai.definePrompt({
   output: {schema: DetermineTaskPriorityOutputSchema},
   prompt: `You are a task management expert. You will determine the priority of a task based on its title and description. The priority can be High, Medium, or Low. Return the priority.
 
+If the description is short or missing, rely more heavily on the title to infer the priority. For example, a title like "Fix critical login bug" implies high priority.
+
 Title: {{{title}}}
 Description: {{{description}}}
 `,config: {

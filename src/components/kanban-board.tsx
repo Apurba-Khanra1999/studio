@@ -1,26 +1,33 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useTasks } from '@/hooks/use-tasks';
+import type { Task, Status } from '@/lib/types';
 import { KanbanColumn } from '@/components/kanban-column';
-import { NewTaskDialog } from '@/components/new-task-dialog';
-import type { Status } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 
 const statuses: Status[] = ["To Do", "In Progress", "Done"];
 
-export function KanbanBoard() {
-  const { tasks, addTask, moveTask, isInitialized } = useTasks();
+interface KanbanBoardProps {
+  tasks: Task[];
+  moveTask: (taskId: string, newStatus: Status) => void;
+  isInitialized: boolean;
+}
+
+export function KanbanBoard({ tasks, moveTask, isInitialized }: KanbanBoardProps) {
 
   const groupedTasks = useMemo(() => {
-    const groups: Record<Status, typeof tasks> = {
+    const groups: Record<Status, Task[]> = {
       "To Do": [],
       "In Progress": [],
       "Done": [],
     };
-    tasks.forEach(task => {
-      groups[task.status].push(task);
-    });
+    if (tasks) {
+      tasks.forEach(task => {
+        if (groups[task.status]) {
+          groups[task.status].push(task);
+        }
+      });
+    }
     return groups;
   }, [tasks]);
 
@@ -43,10 +50,7 @@ export function KanbanBoard() {
 
   return (
     <div className="flex h-full flex-1 flex-col">
-       <div className="flex justify-end p-4">
-          <NewTaskDialog addTask={addTask} />
-        </div>
-      <div className="flex flex-1 items-start gap-6 p-4 md:p-6 pt-0">
+      <div className="flex flex-1 items-start gap-6 p-4 md:p-6">
         {statuses.map(status => (
           <KanbanColumn
             key={status}

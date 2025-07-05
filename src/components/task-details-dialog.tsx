@@ -102,8 +102,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
     }
   };
   
-  const handleAddSubtask = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddSubtask = () => {
     if (newSubtaskText.trim()) {
         addSubtask(task.id, newSubtaskText.trim());
         setNewSubtaskText("");
@@ -251,10 +250,20 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                         </div>
                     ))}
                 </div>
-                 <form onSubmit={handleAddSubtask} className="flex items-center gap-2 pt-2">
-                    <Input value={newSubtaskText} onChange={(e) => setNewSubtaskText(e.target.value)} placeholder="Add a new subtask..." />
-                    <Button type="submit" size="icon"><Plus className="h-4 w-4"/></Button>
-                 </form>
+                 <div className="flex items-center gap-2 pt-2">
+                    <Input 
+                      value={newSubtaskText} 
+                      onChange={(e) => setNewSubtaskText(e.target.value)} 
+                      placeholder="Add a new subtask..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleAddSubtask();
+                        }
+                      }}
+                    />
+                    <Button type="button" size="icon" onClick={handleAddSubtask}><Plus className="h-4 w-4"/></Button>
+                 </div>
              </div>
           </form>
         </Form>

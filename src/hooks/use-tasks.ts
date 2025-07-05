@@ -68,14 +68,15 @@ export function useTasks() {
     try {
       const item = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       if (item) {
-        const parsedTasks = JSON.parse(item, (key, value) => {
+        let parsedTasks = JSON.parse(item, (key, value) => {
             if (key === 'dueDate' && value) {
                 return new Date(value);
             }
             return value;
         });
         if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
-            setTasks(parsedTasks);
+            const sanitizedTasks = parsedTasks.map(task => ({ ...task, subtasks: task.subtasks || [] }));
+            setTasks(sanitizedTasks);
         } else {
             setTasks(initialTasks);
         }
@@ -130,7 +131,7 @@ export function useTasks() {
         if (task.id === taskId) {
             return {
                 ...task,
-                subtasks: task.subtasks.map(subtask => 
+                subtasks: (task.subtasks || []).map(subtask => 
                     subtask.id === subtaskId ? { ...subtask, completed: !subtask.completed } : subtask
                 )
             };
@@ -149,7 +150,7 @@ export function useTasks() {
             };
             return {
                 ...task,
-                subtasks: [...task.subtasks, newSubtask]
+                subtasks: [...(task.subtasks || []), newSubtask]
             };
         }
         return task;
@@ -161,7 +162,7 @@ export function useTasks() {
         if (task.id === taskId) {
             return {
                 ...task,
-                subtasks: task.subtasks.filter(subtask => subtask.id !== subtaskId)
+                subtasks: (task.subtasks || []).filter(subtask => subtask.id !== subtaskId)
             };
         }
         return task;

@@ -6,7 +6,17 @@ import { useTasks } from '@/hooks/use-tasks';
 import { KanbanSquare } from 'lucide-react';
 
 export default function Home() {
-  const { tasks, addTask, moveTask, isInitialized } = useTasks();
+  const { 
+    tasks, 
+    addTask, 
+    updateTask,
+    deleteTask,
+    moveTask, 
+    addSubtask,
+    deleteSubtask,
+    toggleSubtask,
+    isInitialized 
+  } = useTasks();
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -20,7 +30,16 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-1 overflow-x-auto">
-        <KanbanBoard tasks={tasks} moveTask={moveTask} isInitialized={isInitialized} />
+        <KanbanBoard 
+          tasks={tasks} 
+          moveTask={moveTask} 
+          updateTask={updateTask}
+          deleteTask={deleteTask}
+          addSubtask={addSubtask}
+          deleteSubtask={deleteSubtask}
+          toggleSubtask={toggleSubtask}
+          isInitialized={isInitialized} 
+        />
       </main>
     </div>
   );

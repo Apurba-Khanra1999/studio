@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import type { Task, Status } from '@/lib/types';
+import type { Task, Status, Priority, Subtask } from '@/lib/types';
 import { KanbanColumn } from '@/components/kanban-column';
 import { Skeleton } from './ui/skeleton';
 
@@ -10,10 +10,24 @@ const statuses: Status[] = ["To Do", "In Progress", "Done"];
 interface KanbanBoardProps {
   tasks: Task[];
   moveTask: (taskId: string, newStatus: Status) => void;
+  updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
+  deleteTask: (taskId: string) => void;
+  addSubtask: (taskId: string, subtaskText: string) => void;
+  deleteSubtask: (taskId: string, subtaskId: string) => void;
+  toggleSubtask: (taskId: string, subtaskId: string) => void;
   isInitialized: boolean;
 }
 
-export function KanbanBoard({ tasks, moveTask, isInitialized }: KanbanBoardProps) {
+export function KanbanBoard({ 
+  tasks, 
+  moveTask, 
+  updateTask,
+  deleteTask,
+  addSubtask,
+  deleteSubtask,
+  toggleSubtask,
+  isInitialized 
+}: KanbanBoardProps) {
 
   const groupedTasks = useMemo(() => {
     const groups: Record<Status, Task[]> = {
@@ -38,9 +52,9 @@ export function KanbanBoard({ tasks, moveTask, isInitialized }: KanbanBoardProps
           <div key={status} className="flex flex-col w-full md:w-1/3 lg:w-1/4 xl:w-1/5 shrink-0">
              <Skeleton className="h-8 w-1/2 mb-4" />
              <div className="space-y-4">
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
+              <Skeleton className="h-28 w-full" />
              </div>
           </div>
         ))}
@@ -57,6 +71,11 @@ export function KanbanBoard({ tasks, moveTask, isInitialized }: KanbanBoardProps
             status={status}
             tasks={groupedTasks[status]}
             moveTask={moveTask}
+            updateTask={updateTask}
+            deleteTask={deleteTask}
+            addSubtask={addSubtask}
+            deleteSubtask={deleteSubtask}
+            toggleSubtask={toggleSubtask}
           />
         ))}
       </div>

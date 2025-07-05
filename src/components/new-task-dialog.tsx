@@ -19,8 +19,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Wand2, Loader2, Plus } from 'lucide-react';
+import { Wand2, Loader2, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import type { Priority } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 import { generateTaskDescription } from '@/ai/flows/generate-task-description';
 import { determineTaskPriority } from '@/ai/flows/determine-task-priority';
@@ -29,12 +33,13 @@ const taskSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
   description: z.string().optional(),
   priority: z.enum(["Low", "Medium", "High"]),
+  dueDate: z.date().optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface NewTaskDialogProps {
-  addTask: (task: { title: string; description: string; priority: Priority }) => void;
+  addTask: (task: { title: string; description: string; priority: Priority; dueDate?: Date }) => void;
 }
 
 export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
@@ -118,7 +123,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
           Add Task
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Create a new task</DialogTitle>
           <DialogDescription>
@@ -175,45 +180,88 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="priority"
-              render={({ field }) => (
-                <FormItem>
-                   <FormLabel className="flex items-center gap-2">
-                    <span>Priority</span>
-                     <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="h-5 w-5"
-                        onClick={handleDeterminePriority}
-                        disabled={isDeterminingPriority || !form.getValues("title")}
-                        aria-label="Suggest priority with AI"
-                      >
-                        {isDeterminingPriority ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Wand2 className="h-3 w-3" />
-                        )}
-                      </Button>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a priority" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Low">Low</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="High">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                     <FormLabel className="flex items-center gap-2">
+                      <span>Priority</span>
+                       <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-5 w-5"
+                          onClick={handleDeterminePriority}
+                          disabled={isDeterminingPriority || !form.getValues("title")}
+                          aria-label="Suggest priority with AI"
+                        >
+                          {isDeterminingPriority ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Wand2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                  control={form.control}
+                  name="dueDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Due Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date < new Date(new Date().setHours(0,0,0,0))
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
             <DialogFooter>
               <Button type="submit">Create Task</Button>
             </DialogFooter>

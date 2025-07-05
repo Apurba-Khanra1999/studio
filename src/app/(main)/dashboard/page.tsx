@@ -42,7 +42,7 @@ const priorityChartConfig = {
   },
   Medium: {
     label: 'Medium',
-    color: 'hsl(var(--chart-2))',
+    color: 'hsl(var(--chart-4))',
   },
   Low: {
     label: 'Low',
@@ -52,7 +52,7 @@ const priorityChartConfig = {
 
 const priorityStyles: Record<Priority, string> = {
   High: "text-destructive border-destructive/30 bg-destructive/10",
-  Medium: "text-amber-600 border-amber-500/30 bg-amber-500/10 dark:text-amber-400 dark:border-amber-400/30 dark:bg-amber-400/10",
+  Medium: "text-[hsl(var(--chart-4))] border-[hsl(var(--chart-4))]/30 bg-[hsl(var(--chart-4))]/10",
   Low: "text-muted-foreground border-border bg-muted",
 };
 
@@ -114,7 +114,7 @@ export default function DashboardPage() {
     const low = tasks.filter(t => t.priority === 'Low').length;
     return [
       { name: 'High', tasks: high, fill: 'hsl(var(--chart-1))' },
-      { name: 'Medium', tasks: medium, fill: 'hsl(var(--chart-2))' },
+      { name: 'Medium', tasks: medium, fill: 'hsl(var(--chart-4))' },
       { name: 'Low', tasks: low, fill: 'hsl(var(--chart-3))' },
     ];
   }, [tasks, isInitialized]);

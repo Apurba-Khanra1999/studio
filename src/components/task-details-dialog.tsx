@@ -233,7 +233,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                   )}
                 />
             </div>
-             <div className="space-y-2">
+             <div className="space-y-3">
                 <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium">Subtasks</h3>
                     <Button type="button" variant="ghost" size="sm" onClick={handleGenerateSubtasks} disabled={isGeneratingSubtasks}>
@@ -241,16 +241,20 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                         Suggest
                     </Button>
                 </div>
-                <div className="space-y-2">
-                    {subtasks.map(subtask => (
-                        <div key={subtask.id} className="flex items-center gap-2 group">
-                            <Checkbox id={subtask.id} checked={subtask.completed} onCheckedChange={() => toggleSubtask(task.id, subtask.id)} />
-                            <label htmlFor={subtask.id} className={cn("flex-grow text-sm", subtask.completed && "line-through text-muted-foreground")}>{subtask.text}</label>
-                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteSubtask(task.id, subtask.id)}><X className="h-4 w-4" /></Button>
-                        </div>
-                    ))}
+                 <div className="space-y-2 rounded-md border bg-muted/50 p-3">
+                    {subtasks.length > 0 ? (
+                        subtasks.map(subtask => (
+                            <div key={subtask.id} className="flex items-center gap-2 group bg-background p-2 rounded-md shadow-sm">
+                                <Checkbox id={subtask.id} checked={subtask.completed} onCheckedChange={() => toggleSubtask(task.id, subtask.id)} />
+                                <label htmlFor={subtask.id} className={cn("flex-grow text-sm", subtask.completed && "line-through text-muted-foreground")}>{subtask.text}</label>
+                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => deleteSubtask(task.id, subtask.id)}><X className="h-4 w-4" /></Button>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center py-2">No subtasks yet.</p>
+                    )}
                 </div>
-                 <div className="flex items-center gap-2 pt-2">
+                 <div className="flex items-center gap-2">
                     <Input 
                       value={newSubtaskText} 
                       onChange={(e) => setNewSubtaskText(e.target.value)} 

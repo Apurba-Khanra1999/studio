@@ -19,11 +19,11 @@ export default function Home() {
   } = useTasks();
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <div className="flex min-h-screen w-full flex-col bg-background">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
         <div className="flex items-center gap-2">
           <KanbanSquare className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold text-foreground">TaskFlow</h1>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">TaskFlow</h1>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <NewTaskDialog addTask={addTask} />

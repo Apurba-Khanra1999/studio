@@ -26,7 +26,7 @@ const priorityIcons: Record<Priority, React.ReactNode> = {
 
 const priorityStyles: Record<Priority, string> = {
   High: "text-destructive border-destructive/30 bg-destructive/10 hover:bg-destructive/20",
-  Medium: "text-primary border-primary/40 bg-primary/10 hover:bg-primary/20",
+  Medium: "text-amber-600 border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 dark:text-amber-400 dark:border-amber-400/30 dark:bg-amber-400/10 dark:hover:bg-amber-400/20",
   Low: "text-muted-foreground border-border bg-muted hover:bg-muted/80",
 };
 
@@ -54,12 +54,12 @@ export function TaskCard({ task, ...props }: TaskCardProps) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onClick={() => setIsDetailsOpen(true)}
-        className="cursor-pointer active:cursor-grabbing transition-shadow duration-200 hover:shadow-lg"
+        className="cursor-pointer active:cursor-grabbing transition-shadow duration-200 hover:shadow-lg bg-card"
       >
         <CardHeader>
           <CardTitle className="flex items-start justify-between text-base gap-2">
-              <span className="flex-1">{task.title}</span>
-               <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1", priorityStyles[task.priority])}>
+              <span className="flex-1 font-semibold">{task.title}</span>
+               <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1 font-semibold", priorityStyles[task.priority])}>
                   {priorityIcons[task.priority]}
                   {task.priority}
               </Badge>
@@ -78,7 +78,7 @@ export function TaskCard({ task, ...props }: TaskCardProps) {
             )}
           </div>
           {subtasks.length > 0 && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 font-medium text-xs bg-muted px-2 py-1 rounded-md">
               <CheckCircle2 className="h-4 w-4" />
               <span>{completedSubtasks}/{subtasks.length}</span>
             </div>

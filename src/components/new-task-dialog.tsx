@@ -47,7 +47,7 @@ const taskSchema = z.object({
 type TaskFormValues = z.infer<typeof taskSchema>;
 
 interface NewTaskDialogProps {
-  addTask: (task: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[] }) => void;
+  addTask: (task: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[]; imageUrl?: string; }) => void;
 }
 
 export function NewTaskDialog({ addTask }: NewTaskDialogProps) {

@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Calendar as CalendarIcon, Wand2, Loader2, Plus } from 'lucide-react';
+import { Trash2, Calendar as CalendarIcon, Wand2, Loader2, Plus, Image as ImageIcon } from 'lucide-react';
 import type { Task, Status, Subtask } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -28,6 +28,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
 import { generateSubtasks } from '@/ai/flows/generate-subtasks';
+import { generateTaskImage } from '@/ai/flows/generate-task-image';
 
 
 const statuses: Status[] = ["To Do", "In Progress", "Done"];
@@ -43,6 +44,7 @@ const taskSchema = z.object({
     text: z.string(),
     completed: z.boolean(),
   })).optional(),
+  imageUrl: z.string().optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskSchema>;
@@ -59,6 +61,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
   const { toast } = useToast();
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -68,7 +71,8 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
       priority: task.priority,
       status: task.status,
       dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-      subtasks: task.subtasks || []
+      subtasks: task.subtasks || [],
+      imageUrl: task.imageUrl
     }), [task])
   });
 
@@ -79,7 +83,8 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
       priority: task.priority,
       status: task.status,
       dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-      subtasks: task.subtasks || []
+      subtasks: task.subtasks || [],
+      imageUrl: task.imageUrl
     });
   }, [task, form, isOpen]);
 
@@ -125,6 +130,27 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
     } finally {
       setIsGeneratingSubtasks(false);
     }
+  };
+
+  const handleGenerateImage = async () => {
+    setIsGeneratingImage(true);
+    try {
+      const result = await generateTaskImage({ title: form.getValues('title') });
+      form.setValue('imageUrl', result.imageUrl, { shouldDirty: true });
+    } catch (error) {
+      console.error("AI image generation failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to generate task image.",
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    form.setValue('imageUrl', undefined, { shouldDirty: true });
   };
 
   const handleAddSubtask = () => {
@@ -256,6 +282,47 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                         </FormItem>
                       )}
                     />
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                    <FormLabel>Task Image</FormLabel>
+                    {form.watch('imageUrl') ? (
+                    <div className="relative group">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={form.getValues('imageUrl')}
+                            alt="Generated task"
+                            className="w-full h-48 object-cover rounded-md border"
+                            data-ai-hint="task illustration"
+                        />
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={handleRemoveImage}
+                            >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-md">
+                        <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">No image has been generated for this task.</p>
+                    </div>
+                    )}
+                    <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleGenerateImage}
+                    disabled={isGeneratingImage || !form.getValues('title')}
+                    >
+                    {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                    {form.watch('imageUrl') ? 'Generate a new image with AI' : 'Generate an image with AI'}
+                    </Button>
                 </div>
                 
                 <Separator />

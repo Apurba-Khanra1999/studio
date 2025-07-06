@@ -53,7 +53,16 @@ export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
         onClick={() => setIsDetailsOpen(true)}
         className="cursor-pointer active:cursor-grabbing transition-shadow duration-200 hover:shadow-lg bg-card"
       >
-        <CardHeader>
+        {task.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={task.imageUrl}
+                alt={`Image for ${task.title}`}
+                className="w-full h-32 object-cover rounded-t-lg"
+                data-ai-hint="task illustration"
+            />
+        )}
+        <CardHeader className={cn(!task.imageUrl && "pt-6")}>
           <CardTitle className="flex items-start justify-between text-base gap-2">
               <span className="flex-1 font-semibold">{task.title}</span>
                <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1 font-semibold", priorityStyles[task.priority])}>

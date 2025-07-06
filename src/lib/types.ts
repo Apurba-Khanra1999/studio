@@ -15,4 +15,5 @@ export interface Task {
   status: Status;
   dueDate?: Date;
   subtasks: Subtask[];
+  imageUrl?: string;
 }

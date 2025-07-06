@@ -17,7 +17,8 @@ const initialTasks: Task[] = [
         { id: 'sub-1-1', text: 'Define color palette', completed: true },
         { id: 'sub-1-2', text: 'Create wireframes', completed: true },
         { id: 'sub-1-3', text: 'Design hero section', completed: false },
-      ]
+      ],
+      imageUrl: 'https://placehold.co/600x400.png',
     },
     {
       id: 'task-2',
@@ -25,7 +26,8 @@ const initialTasks: Task[] = [
       description: 'Implement secure user authentication using JWT and password hashing. Include sign-up, login, and logout functionality.',
       status: 'In Progress',
       priority: 'High',
-      subtasks: []
+      subtasks: [],
+      imageUrl: 'https://placehold.co/600x400.png',
     },
     {
       id: 'task-3',
@@ -103,7 +105,7 @@ export function useTasks() {
     }
   }, [tasks, isInitialized]);
 
-  const addTask = useCallback((newTaskData: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[] }) => {
+  const addTask = useCallback((newTaskData: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[], imageUrl?: string; }) => {
     const newTask: Task = {
       id: `task-${generateId()}`,
       status: 'To Do',

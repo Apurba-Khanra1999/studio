@@ -351,8 +351,8 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                       control={form.control}
                       name="dueDate"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Due Date</FormLabel>
+                        <FormItem className="flex flex-col pt-[1.62rem]">
+                          <FormLabel className="sr-only">Due Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
@@ -520,7 +520,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
         </div>
         <DialogFooter className="p-6 pt-4 border-t flex-shrink-0">
           <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button type="submit" form="task-details-form" onClick={form.handleSubmit(onSubmit)}>Create Task</Button>
+          <Button type="submit" onClick={form.handleSubmit(onSubmit)}>Create Task</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -13,6 +13,7 @@ interface TaskCardProps {
   task: Task;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId: string) => void;
+  compactView?: boolean;
 }
 
 const priorityIcons: Record<Priority, React.ReactNode> = {
@@ -28,7 +29,7 @@ const priorityStyles: Record<Priority, string> = {
 };
 
 
-export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
+export function TaskCard({ task, updateTask, deleteTask, compactView = false }: TaskCardProps) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
@@ -53,7 +54,7 @@ export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
         onClick={() => setIsDetailsOpen(true)}
         className="cursor-pointer active:cursor-grabbing transition-shadow duration-200 hover:shadow-lg bg-card"
       >
-        {task.imageUrl && (
+        {!compactView && task.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
                 src={task.imageUrl}
@@ -62,7 +63,7 @@ export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
                 data-ai-hint="task illustration"
             />
         )}
-        <CardHeader className={cn(!task.imageUrl && "pt-6")}>
+        <CardHeader className={cn((compactView || !task.imageUrl) && "pt-6")}>
           <CardTitle className="flex items-start justify-between text-base gap-2">
               <span className="flex-1 font-semibold">{task.title}</span>
                <Badge variant="outline" className={cn("flex shrink-0 items-center gap-1 font-semibold", priorityStyles[task.priority])}>
@@ -71,10 +72,12 @@ export function TaskCard({ task, updateTask, deleteTask }: TaskCardProps) {
               </Badge>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <CardDescription className="line-clamp-2">{task.description}</CardDescription>
-        </CardContent>
-        <CardFooter className="flex justify-between items-center text-sm text-muted-foreground">
+        {!compactView && (
+            <CardContent>
+                <CardDescription className="line-clamp-2">{task.description}</CardDescription>
+            </CardContent>
+        )}
+        <CardFooter className={cn("flex justify-between items-center text-sm text-muted-foreground", compactView && "pt-0")}>
           <div className="flex items-center gap-2">
             {task.dueDate && (
               <div className="flex items-center gap-1">

@@ -13,6 +13,7 @@ interface KanbanBoardProps {
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId: string) => void;
   isInitialized: boolean;
+  compactView?: boolean;
 }
 
 export function KanbanBoard({ 
@@ -20,7 +21,8 @@ export function KanbanBoard({
   moveTask, 
   updateTask,
   deleteTask,
-  isInitialized 
+  isInitialized,
+  compactView = false,
 }: KanbanBoardProps) {
 
   const groupedTasks = useMemo(() => {
@@ -67,6 +69,7 @@ export function KanbanBoard({
             moveTask={moveTask}
             updateTask={updateTask}
             deleteTask={deleteTask}
+            compactView={compactView}
           />
         ))}
       </div>

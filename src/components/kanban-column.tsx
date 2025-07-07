@@ -12,9 +12,10 @@ interface KanbanColumnProps {
   moveTask: (taskId: string, newStatus: Status) => void;
   updateTask: (taskId: string, data: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId: string) => void;
+  compactView?: boolean;
 }
 
-export function KanbanColumn({ status, tasks, moveTask, updateTask, deleteTask }: KanbanColumnProps) {
+export function KanbanColumn({ status, tasks, moveTask, updateTask, deleteTask, compactView = false }: KanbanColumnProps) {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -54,7 +55,7 @@ export function KanbanColumn({ status, tasks, moveTask, updateTask, deleteTask }
       <ScrollArea className="h-[calc(100vh-14rem)] flex-1">
         <div className="flex flex-col gap-4 p-4">
           {tasks.length > 0 ? (
-            tasks.map(task => <TaskCard key={task.id} task={task} updateTask={updateTask} deleteTask={deleteTask} />)
+            tasks.map(task => <TaskCard key={task.id} task={task} updateTask={updateTask} deleteTask={deleteTask} compactView={compactView} />)
           ) : (
             <div className="flex h-32 items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
               <p>Drag tasks here</p>

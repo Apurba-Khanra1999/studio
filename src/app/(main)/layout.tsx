@@ -9,14 +9,77 @@ import {
   LOCAL_STORAGE_KEY,
   generateId,
 } from '@/hooks/use-tasks';
+import {
+  NotificationsContext,
+  NOTIFICATIONS_LOCAL_STORAGE_KEY,
+  generateId as generateNotificationId,
+} from '@/hooks/use-notifications';
 import { KanbanSquare, LayoutDashboard, Calendar } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { QuickTaskEntry } from "@/components/quick-task-entry";
+import { NotificationBell } from "@/components/notification-bell";
 import * as React from 'react';
-import type { Task, Status, Priority, Subtask } from '@/lib/types';
+import type { Task, Status, Priority, Subtask, Notification } from '@/lib/types';
 import { useTasks } from '@/hooks/use-tasks';
+import { useNotifications } from '@/hooks/use-notifications';
 
+
+function NotificationsProvider({ children }: { children: React.ReactNode }) {
+  const [notifications, setNotifications] = React.useState<Notification[]>([]);
+  const [isInitialized, setIsInitialized] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      const item = window.localStorage.getItem(NOTIFICATIONS_LOCAL_STORAGE_KEY);
+      if (item) {
+        const parsedNotifications = JSON.parse(item, (key, value) => {
+          if (key === 'timestamp' && value) {
+            return new Date(value);
+          }
+          return value;
+        });
+        if (Array.isArray(parsedNotifications)) {
+          setNotifications(parsedNotifications);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load notifications from localStorage", error);
+    }
+    setIsInitialized(true);
+  }, []);
+
+  React.useEffect(() => {
+    if (isInitialized) {
+      try {
+        window.localStorage.setItem(NOTIFICATIONS_LOCAL_STORAGE_KEY, JSON.stringify(notifications));
+      } catch (error) {
+        console.error("Failed to save notifications to localStorage", error);
+      }
+    }
+  }, [notifications, isInitialized]);
+
+  const addNotification = React.useCallback((notificationData: { message: string }) => {
+    const newNotification: Notification = {
+      id: generateNotificationId(),
+      timestamp: new Date(),
+      read: false,
+      ...notificationData,
+    };
+    // Keep the list from growing too large, e.g., max 20 notifications
+    setNotifications(prev => [newNotification, ...prev].slice(0, 20));
+  }, []);
+
+  const markAllAsRead = React.useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, []);
+
+  const unreadCount = React.useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
+
+  const value = { notifications, addNotification, markAllAsRead, unreadCount, isInitialized };
+
+  return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
+}
 
 // This component uses the context, so it must be a child of TasksProvider
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -56,6 +119,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         <div className="ml-auto flex items-center gap-2">
           <QuickTaskEntry addTask={addTask} />
           <NewTaskDialog addTask={addTask} />
+          <NotificationBell />
           <ThemeToggle />
         </div>
       </header>
@@ -65,7 +129,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 
-export default function MainLayout({
+function MainLayout({
   children,
 }: {
   children: React.ReactNode
@@ -73,20 +137,19 @@ export default function MainLayout({
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [isInitialized, setIsInitialized] = React.useState(false);
 
+  const notificationsContext = useNotifications();
+
   React.useEffect(() => {
     try {
       const item = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       if (item) {
         let parsedTasks = JSON.parse(item, (key, value) => {
-            // This reviver function ensures dueDate strings are converted back to Date objects
             if (key === 'dueDate' && value) {
-                // new Date(value) is robust enough for ISO strings
                 return new Date(value);
             }
             return value;
         });
 
-        // Ensure subtasks is always an array
         if (Array.isArray(parsedTasks)) {
           parsedTasks = parsedTasks.map(task => ({
             ...task,
@@ -97,16 +160,13 @@ export default function MainLayout({
         if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
             setTasks(parsedTasks);
         } else {
-            // If localStorage is empty or invalid, load initial sample data
             setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
         }
       } else {
-        // If no item in localStorage, load initial sample data
         setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
       }
     } catch (error) {
       console.error("Failed to load tasks from localStorage", error);
-      // Fallback to initial data on error
       setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
     }
     setIsInitialized(true);
@@ -115,7 +175,6 @@ export default function MainLayout({
   React.useEffect(() => {
     if (isInitialized) {
       try {
-        // This will automatically convert Date objects to ISO strings
         window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
       } catch (error) {
         console.error("Failed to save tasks to localStorage", error);
@@ -130,19 +189,34 @@ export default function MainLayout({
       ...newTaskData,
     };
     setTasks(prevTasks => [newTask, ...prevTasks]);
-  }, []);
+    notificationsContext.addNotification({ message: `New task added: "${newTaskData.title}"` });
+  }, [notificationsContext]);
   
   const updateTask = React.useCallback((taskId: string, updatedData: Partial<Omit<Task, 'id'>>) => {
+    const taskToUpdate = tasks.find(task => task.id === taskId);
+
     setTasks(prevTasks =>
       prevTasks.map(task =>
         task.id === taskId ? { ...task, ...updatedData } : task
       )
     );
-  }, []);
+
+    if (taskToUpdate) {
+      if (updatedData.status && updatedData.status === 'Done' && taskToUpdate.status !== 'Done') {
+        notificationsContext.addNotification({ message: `Task completed: "${taskToUpdate.title}"` });
+      } else {
+        notificationsContext.addNotification({ message: `Task updated: "${taskToUpdate.title}"` });
+      }
+    }
+  }, [tasks, notificationsContext]);
 
   const deleteTask = React.useCallback((taskId: string) => {
+    const taskToDelete = tasks.find(task => task.id === taskId);
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-  }, []);
+    if (taskToDelete) {
+      notificationsContext.addNotification({ message: `Task deleted: "${taskToDelete.title}"` });
+    }
+  }, [tasks, notificationsContext]);
 
   const moveTask = React.useCallback((taskId: string, newStatus: Status) => {
     updateTask(taskId, { status: newStatus });
@@ -152,9 +226,21 @@ export default function MainLayout({
   
   return (
     <TasksContext.Provider value={value}>
-      <MainLayoutContent>
-        {children}
-      </MainLayoutContent>
+        <MainLayoutContent>
+          {children}
+        </MainLayoutContent>
     </TasksContext.Provider>
   );
 }
+
+// The RootLayout now needs to include the NotificationsProvider
+const RootLayoutWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <NotificationsProvider>
+      <MainLayout>{children}</MainLayout>
+    </NotificationsProvider>
+  );
+};
+
+// We need to export this wrapper now instead of MainLayout directly
+export default RootLayoutWrapper;

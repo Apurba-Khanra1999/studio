@@ -17,3 +17,10 @@ export interface Task {
   subtasks: Subtask[];
   imageUrl?: string;
 }
+
+export interface Notification {
+  id: string;
+  message: string;
+  timestamp: Date;
+  read: boolean;
+}

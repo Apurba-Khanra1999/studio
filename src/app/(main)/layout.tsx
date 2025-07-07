@@ -9,7 +9,7 @@ import {
   LOCAL_STORAGE_KEY,
   generateId,
 } from '@/hooks/use-tasks';
-import { KanbanSquare, LayoutDashboard, Calendar, Bot } from 'lucide-react';
+import { KanbanSquare, LayoutDashboard, Calendar } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { QuickTaskEntry } from "@/components/quick-task-entry";
@@ -27,7 +27,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     { href: "/board", label: "Board", icon: KanbanSquare },
     { href: "/dashboard",label: "Dashboard", icon: LayoutDashboard },
     { href: "/calendar", label: "Calendar", icon: Calendar },
-    { href: "/assistant", label: "Assistant", icon: Bot },
   ];
 
   return (

@@ -83,13 +83,14 @@ const createTaskTool = ai.defineTool(
   },
   async (input) => {
     // This is a placeholder. The real implementation is provided in the flow.
-    const newTask = {
+    const newTask: z.infer<typeof TaskSchema> = {
         id: `task-${generateId()}`,
         title: input.title,
         description: input.description || '',
         priority: input.priority || 'Medium',
         status: input.status || 'To Do',
         subtasks: [],
+        imageUrl: undefined,
     };
     return newTask;
   }
@@ -154,6 +155,7 @@ const assistantFlow = ai.defineFlow(
                   priority: priority || 'Medium',
                   status: status || 'To Do',
                   subtasks: [],
+                  imageUrl: undefined,
               };
               currentTasks.push(newTask);
               return newTask;
@@ -185,7 +187,7 @@ const assistantFlow = ai.defineFlow(
         - When listing tasks, provide a concise summary of the results.
         - When creating or updating a task, confirm the action you have taken.
         - If you need to identify a task to update, and multiple tasks match a title, ask the user for clarification.
-        - The user's current tasks are provided in the context; use the provided tools to interact with them.`,
+        - To get information about the current tasks (e.g., to list or find a specific task to update), you must use the 'listTasks' tool. Do not assume you have the task list.`,
         tools: Object.values(tools).map(t => t.tool),
         toolImplementation: Object.fromEntries(Object.entries(tools).map(([k,v]) => [k,v.fn])),
     });

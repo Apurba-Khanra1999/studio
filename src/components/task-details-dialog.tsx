@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Trash2, Calendar as CalendarIcon, Wand2, Loader2, Plus, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Calendar as CalendarIcon, Wand2, Loader2, Plus, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import type { Task, Status, Subtask } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { generateSubtasks } from '@/ai/flows/generate-subtasks';
 import { generateTaskImage } from '@/ai/flows/generate-task-image';
 
@@ -62,6 +63,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -146,6 +148,28 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
       });
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Please select an image smaller than 2MB.',
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (loadEvent) => {
+        const result = loadEvent.target?.result;
+        if (typeof result === 'string') {
+          form.setValue('imageUrl', result, { shouldDirty: true });
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -289,40 +313,74 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                 <div className="space-y-2">
                     <FormLabel>Task Image</FormLabel>
                     {form.watch('imageUrl') ? (
-                    <div className="relative group">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src={form.getValues('imageUrl')}
-                            alt="Generated task"
-                            className="w-full h-48 object-cover rounded-md border"
-                            data-ai-hint="task illustration"
-                        />
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={handleRemoveImage}
-                            >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
+                      <div className="relative group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                              src={form.getValues('imageUrl')}
+                              alt="Task"
+                              className="w-full h-48 object-cover rounded-md border"
+                              data-ai-hint="task illustration"
+                          />
+                          <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={handleRemoveImage}
+                              >
+                              <Trash2 className="h-4 w-4" />
+                          </Button>
+                      </div>
                     ) : (
-                    <div className="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-md">
-                        <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">No image has been generated for this task.</p>
-                    </div>
+                      <div className="flex flex-col items-center justify-center gap-2 p-8 border-2 border-dashed rounded-md">
+                          <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">No image added for this task.</p>
+                      </div>
                     )}
-                    <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleGenerateImage}
-                    disabled={isGeneratingImage || !form.getValues('title')}
-                    >
-                    {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                    {form.watch('imageUrl') ? 'Generate a new image with AI' : 'Generate an image with AI'}
-                    </Button>
+                    <Tabs defaultValue="ai" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="ai">
+                          <Wand2 className="mr-2 h-4 w-4" />
+                           Generate with AI
+                        </TabsTrigger>
+                        <TabsTrigger value="upload">
+                          <UploadCloud className="mr-2 h-4 w-4" />
+                           Upload Image
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="ai" className="pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage || !form.getValues('title')}
+                        >
+                          {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                          {form.watch('imageUrl') ? 'Generate a new image' : 'Generate an image'}
+                        </Button>
+                      </TabsContent>
+                      <TabsContent value="upload" className="pt-2">
+                        <div className="relative">
+                          <Input
+                            id="image-upload-details"
+                            type="file"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            accept="image/png, image/jpeg, image/gif"
+                            onChange={handleImageUpload}
+                            ref={fileInputRef}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full pointer-events-none"
+                          >
+                            <UploadCloud className="mr-2 h-4 w-4" />
+                            Choose from device
+                          </Button>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                 </div>
                 
                 <Separator />

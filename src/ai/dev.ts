@@ -10,3 +10,4 @@ import '@/ai/flows/generate-dashboard-summary.ts';
 import '@/ai/flows/generate-audio-summary.ts';
 import '@/ai/flows/generate-task-image.ts';
 import '@/ai/flows/parse-natural-language-task.ts';
+import '@/ai/flows/assistant-flow.ts';

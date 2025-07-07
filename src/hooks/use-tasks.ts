@@ -61,6 +61,7 @@ export const generateId = () => `${Date.now()}-${Math.random().toString(36).subs
 // Define the context shape
 export interface TasksContextType {
   tasks: Task[];
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   addTask: (newTaskData: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[], imageUrl?: string; }) => void;
   updateTask: (taskId: string, updatedData: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (taskId: string) => void;

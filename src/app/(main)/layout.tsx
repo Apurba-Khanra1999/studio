@@ -4,18 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NewTaskDialog } from '@/components/new-task-dialog';
 import { 
-  useTasks,
   TasksContext,
   initialTasks,
   LOCAL_STORAGE_KEY,
   generateId,
 } from '@/hooks/use-tasks';
-import { KanbanSquare, LayoutDashboard, Calendar } from 'lucide-react';
+import { KanbanSquare, LayoutDashboard, Calendar, Bot } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { QuickTaskEntry } from "@/components/quick-task-entry";
 import * as React from 'react';
 import type { Task, Status, Priority, Subtask } from '@/lib/types';
+import { useTasks } from '@/hooks/use-tasks';
+
 
 // This component uses the context, so it must be a child of TasksProvider
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -26,6 +27,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     { href: "/board", label: "Board", icon: KanbanSquare },
     { href: "/dashboard",label: "Dashboard", icon: LayoutDashboard },
     { href: "/calendar", label: "Calendar", icon: Calendar },
+    { href: "/assistant", label: "Assistant", icon: Bot },
   ];
 
   return (
@@ -77,12 +79,15 @@ export default function MainLayout({
       const item = window.localStorage.getItem(LOCAL_STORAGE_KEY);
       if (item) {
         let parsedTasks = JSON.parse(item, (key, value) => {
+            // This reviver function ensures dueDate strings are converted back to Date objects
             if (key === 'dueDate' && value) {
+                // new Date(value) is robust enough for ISO strings
                 return new Date(value);
             }
             return value;
         });
 
+        // Ensure subtasks is always an array
         if (Array.isArray(parsedTasks)) {
           parsedTasks = parsedTasks.map(task => ({
             ...task,
@@ -93,13 +98,16 @@ export default function MainLayout({
         if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
             setTasks(parsedTasks);
         } else {
+            // If localStorage is empty or invalid, load initial sample data
             setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
         }
       } else {
+        // If no item in localStorage, load initial sample data
         setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
       }
     } catch (error) {
       console.error("Failed to load tasks from localStorage", error);
+      // Fallback to initial data on error
       setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
     }
     setIsInitialized(true);
@@ -108,6 +116,7 @@ export default function MainLayout({
   React.useEffect(() => {
     if (isInitialized) {
       try {
+        // This will automatically convert Date objects to ISO strings
         window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
       } catch (error) {
         console.error("Failed to save tasks to localStorage", error);
@@ -140,7 +149,7 @@ export default function MainLayout({
     updateTask(taskId, { status: newStatus });
   }, [updateTask]);
 
-  const value = { tasks, addTask, updateTask, deleteTask, moveTask, isInitialized };
+  const value = { tasks, setTasks, addTask, updateTask, deleteTask, moveTask, isInitialized };
   
   return (
     <TasksContext.Provider value={value}>

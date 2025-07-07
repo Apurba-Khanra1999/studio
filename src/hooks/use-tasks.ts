@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { createContext, useContext } from 'react';
 import type { Task, Status, Priority, Subtask } from '@/lib/types';
 
-const LOCAL_STORAGE_KEY = 'taskflow-tasks';
+export const LOCAL_STORAGE_KEY = 'taskflow-tasks';
 
-const initialTasks: Task[] = [
+export const initialTasks: Task[] = [
     {
       id: 'task-1',
       title: 'Design the new landing page',
@@ -56,79 +56,26 @@ const initialTasks: Task[] = [
     }
   ];
 
-const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+export const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
+// Define the context shape
+export interface TasksContextType {
+  tasks: Task[];
+  addTask: (newTaskData: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[], imageUrl?: string; }) => void;
+  updateTask: (taskId: string, updatedData: Partial<Omit<Task, 'id'>>) => void;
+  deleteTask: (taskId: string) => void;
+  moveTask: (taskId: string, newStatus: Status) => void;
+  isInitialized: boolean;
+}
+
+// Create the context with a default value
+export const TasksContext = createContext<TasksContextType | undefined>(undefined);
+
+// The custom hook that components will use
 export function useTasks() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  useEffect(() => {
-    try {
-      const item = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (item) {
-        let parsedTasks = JSON.parse(item, (key, value) => {
-            if (key === 'dueDate' && value) {
-                return new Date(value);
-            }
-            return value;
-        });
-
-        if (Array.isArray(parsedTasks)) {
-          parsedTasks = parsedTasks.map(task => ({
-            ...task,
-            subtasks: task.subtasks || []
-          }));
-        }
-
-        if (Array.isArray(parsedTasks) && parsedTasks.length > 0) {
-            setTasks(parsedTasks);
-        } else {
-            setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
-        }
-      } else {
-        setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
-      }
-    } catch (error) {
-      console.error("Failed to load tasks from localStorage", error);
-      setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
-    }
-    setIsInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    if (isInitialized) {
-      try {
-        window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(tasks));
-      } catch (error) {
-        console.error("Failed to save tasks to localStorage", error);
-      }
-    }
-  }, [tasks, isInitialized]);
-
-  const addTask = useCallback((newTaskData: { title: string; description: string; priority: Priority; dueDate?: Date; subtasks: Subtask[], imageUrl?: string; }) => {
-    const newTask: Task = {
-      id: `task-${generateId()}`,
-      status: 'To Do',
-      ...newTaskData,
-    };
-    setTasks(prevTasks => [newTask, ...prevTasks]);
-  }, []);
-  
-  const updateTask = useCallback((taskId: string, updatedData: Partial<Omit<Task, 'id'>>) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === taskId ? { ...task, ...updatedData } : task
-      )
-    );
-  }, []);
-
-  const deleteTask = useCallback((taskId: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-  }, []);
-
-  const moveTask = useCallback((taskId: string, newStatus: Status) => {
-    updateTask(taskId, { status: newStatus });
-  }, [updateTask]);
-
-  return { tasks, addTask, updateTask, deleteTask, moveTask, isInitialized };
+  const context = useContext(TasksContext);
+  if (context === undefined) {
+    throw new Error('useTasks must be used within a TasksProvider');
+  }
+  return context;
 }

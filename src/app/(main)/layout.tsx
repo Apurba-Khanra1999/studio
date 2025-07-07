@@ -68,8 +68,8 @@ function NotificationsProvider({ children }: { children: React.ReactNode }) {
       read: false,
       ...notificationData,
     };
-    // Keep the list from growing too large, e.g., max 20 notifications
-    setNotifications(prev => [newNotification, ...prev].slice(0, 20));
+    // Keep the list from growing too large, e.g., max 100 notifications
+    setNotifications(prev => [newNotification, ...prev].slice(0, 100));
   }, []);
 
   const markAllAsRead = React.useCallback(() => {

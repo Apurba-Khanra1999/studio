@@ -1,18 +1,22 @@
 "use client";
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useNotifications } from '@/hooks/use-notifications';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, ArrowRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 export function NotificationBell() {
   const { notifications, unreadCount, markAllAsRead, isInitialized } = useNotifications();
   const [isOpen, setIsOpen] = React.useState(false);
+
+  const latestNotifications = notifications.slice(0, 10);
 
   React.useEffect(() => {
     if (isOpen && unreadCount > 0) {
@@ -43,15 +47,15 @@ export function NotificationBell() {
            <span className="sr-only">Open notifications</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-96 p-0">
+      <PopoverContent align="end" className="w-96 p-0 flex flex-col">
         <div className="flex items-center justify-between p-4">
           <h3 className="font-semibold text-lg">Notifications</h3>
           {unreadCount > 0 && <Badge variant="default" className='h-6'>{unreadCount} new</Badge>}
         </div>
         <Separator />
         <ScrollArea className="h-80">
-          {notifications.length > 0 ? (
-            notifications.map((notif) => (
+          {latestNotifications.length > 0 ? (
+            latestNotifications.map((notif) => (
               <div key={notif.id} className={cn(
                 "p-4 text-sm border-b",
                 !notif.read && "bg-primary/5"
@@ -70,11 +74,16 @@ export function NotificationBell() {
             </div>
           )}
         </ScrollArea>
+        <Separator />
+        <div className="p-2">
+            <Link href="/notifications" passHref>
+                <Button variant="ghost" className="w-full justify-center text-sm" onClick={() => setIsOpen(false)}>
+                    View All Notifications
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            </Link>
+        </div>
       </PopoverContent>
     </Popover>
   );
 }
-
-// Need to add Badge to this file. Since it's self-contained, I can add a local definition.
-// Or better, I will assume it's imported globally.
-import { Badge } from '@/components/ui/badge';

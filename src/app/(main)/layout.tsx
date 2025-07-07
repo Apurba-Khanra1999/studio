@@ -7,6 +7,7 @@ import { useTasks } from '@/hooks/use-tasks';
 import { KanbanSquare, LayoutDashboard, Calendar } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { QuickTaskEntry } from "@/components/quick-task-entry";
 
 export default function MainLayout({
   children,
@@ -47,6 +48,7 @@ export default function MainLayout({
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <QuickTaskEntry addTask={addTask} />
           <NewTaskDialog addTask={addTask} />
           <ThemeToggle />
         </div>

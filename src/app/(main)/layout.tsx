@@ -14,7 +14,7 @@ import {
   NOTIFICATIONS_LOCAL_STORAGE_KEY,
   generateId as generateNotificationId,
 } from '@/hooks/use-notifications';
-import { KanbanSquare, LayoutDashboard, Calendar } from 'lucide-react';
+import { KanbanSquare, LayoutDashboard, Calendar, Search } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { QuickTaskEntry } from "@/components/quick-task-entry";
@@ -23,6 +23,8 @@ import * as React from 'react';
 import type { Task, Status, Priority, Subtask, Notification } from '@/lib/types';
 import { useTasks } from '@/hooks/use-tasks';
 import { useNotifications } from '@/hooks/use-notifications';
+import { Button } from "@/components/ui/button";
+import { CommandPalette } from "@/components/command-palette";
 
 
 function NotificationsProvider({ children }: { children: React.ReactNode }) {
@@ -83,8 +85,20 @@ function NotificationsProvider({ children }: { children: React.ReactNode }) {
 
 // This component uses the context, so it must be a child of TasksProvider
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
-  const { addTask } = useTasks();
+  const { tasks, addTask, updateTask, deleteTask } = useTasks();
   const pathname = usePathname();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setIsCommandPaletteOpen((open) => !open)
+      }
+    }
+    document.addEventListener("keydown", down)
+    return () => document.removeEventListener("keydown", down)
+  }, [])
 
   const navLinks = [
     { href: "/board", label: "Board", icon: KanbanSquare },
@@ -93,38 +107,50 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-        <div className="flex items-center gap-2">
-          <KanbanSquare className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold tracking-tight text-foreground">TaskFlow</h1>
-        </div>
+    <>
+      <CommandPalette 
+        isOpen={isCommandPaletteOpen}
+        setIsOpen={setIsCommandPaletteOpen}
+        tasks={tasks}
+        updateTask={updateTask}
+        deleteTask={deleteTask}
+      />
+      <div className="flex min-h-screen w-full flex-col bg-background">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+          <div className="flex items-center gap-2">
+            <KanbanSquare className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-bold tracking-tight text-foreground">TaskFlow</h1>
+          </div>
 
-        <nav className="ml-6 flex items-center space-x-4 lg:space-x-6">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
-                pathname === link.href ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              <link.icon className="h-4 w-4" />
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+          <nav className="ml-6 flex items-center space-x-4 lg:space-x-6">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
+                  pathname === link.href ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            ))}
+          </nav>
 
-        <div className="ml-auto flex items-center gap-2">
-          <QuickTaskEntry addTask={addTask} />
-          <NewTaskDialog addTask={addTask} />
-          <NotificationBell />
-          <ThemeToggle />
-        </div>
-      </header>
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setIsCommandPaletteOpen(true)} aria-label="Open command palette">
+              <Search className="h-4 w-4" />
+            </Button>
+            <QuickTaskEntry addTask={addTask} />
+            <NewTaskDialog addTask={addTask} />
+            <NotificationBell />
+            <ThemeToggle />
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
+    </>
   );
 }
 
@@ -242,5 +268,4 @@ const RootLayoutWrapper = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// We need to export this wrapper now instead of MainLayout directly
 export default RootLayoutWrapper;

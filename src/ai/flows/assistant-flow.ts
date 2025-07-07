@@ -30,13 +30,13 @@ const TaskSchema = z.object({
   imageUrl: z.string().optional(),
 });
 
-export const AssistantInputSchema = z.object({
+const AssistantInputSchema = z.object({
   query: z.string().describe('The user\'s request in natural language.'),
   tasks: z.array(TaskSchema).describe('The current list of all tasks.'),
 });
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
-export const AssistantOutputSchema = z.object({
+const AssistantOutputSchema = z.object({
   response: z.string().describe('The AI\'s conversational response.'),
   tasks: z.array(TaskSchema).describe('The final list of tasks after applying any changes.'),
 });

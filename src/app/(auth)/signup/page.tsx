@@ -1,5 +1,14 @@
-import { redirect } from 'next/navigation';
+"use client";
+
+import { useRouter } from 'next/navigation';
+import React from 'react';
 
 export default function SignupPage() {
-  redirect('/board');
+  const router = useRouter();
+
+  React.useEffect(() => {
+    router.replace('/board');
+  }, [router]);
+
+  return null;
 }

@@ -17,13 +17,13 @@ const TaskDetailsSchema = z.object({
   subtasks: z.array(z.string()).describe('A list of short, actionable AI-generated subtask descriptions.'),
 });
 
-export const GenerateFullTaskFromTitleInputSchema = z.object({
+const GenerateFullTaskFromTitleInputSchema = z.object({
   title: z.string().describe('The title of the task.'),
 });
 export type GenerateFullTaskFromTitleInput = z.infer<typeof GenerateFullTaskFromTitleInputSchema>;
 
 // The final output schema includes the text details and the generated image URL.
-export const GenerateFullTaskFromTitleOutputSchema = TaskDetailsSchema.extend({
+const GenerateFullTaskFromTitleOutputSchema = TaskDetailsSchema.extend({
     imageUrl: z.string().describe("The generated image as a data URI. Expected format: 'data:image/png;base64,<encoded_data>'."),
 });
 export type GenerateFullTaskFromTitleOutput = z.infer<typeof GenerateFullTaskFromTitleOutputSchema>;

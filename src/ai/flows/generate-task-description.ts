@@ -28,6 +28,7 @@ export async function generateTaskDescription(
 
 const prompt = ai.definePrompt({
   name: 'generateTaskDescriptionPrompt',
+  model: 'googleai/gemini-2.0-flash',
   input: {schema: GenerateTaskDescriptionInputSchema},
   output: {schema: GenerateTaskDescriptionOutputSchema},
   prompt: `You are an expert project manager. Your goal is to take a task title and write a detailed, helpful description for it.

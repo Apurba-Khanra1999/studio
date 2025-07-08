@@ -32,6 +32,7 @@ export async function parseNaturalLanguageTask(
 
 const prompt = ai.definePrompt({
   name: 'parseNaturalLanguageTaskPrompt',
+  model: 'googleai/gemini-2.0-flash',
   input: {schema: z.object({
     text: z.string(),
     currentDate: z.string()

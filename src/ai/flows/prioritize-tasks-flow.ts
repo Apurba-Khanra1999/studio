@@ -39,6 +39,7 @@ export async function prioritizeTasks(input: PrioritizeTasksInput): Promise<Prio
 
 const prompt = ai.definePrompt({
   name: 'prioritizeTasksPrompt',
+  model: 'googleai/gemini-2.0-flash',
   input: {schema: PrioritizeTasksInputSchema},
   output: {schema: PrioritizeTasksOutputSchema},
   prompt: `You are an expert project manager. Your goal is to intelligently prioritize a list of tasks.

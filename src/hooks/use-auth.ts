@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from 'react';
 import { 
     useState, 
     useEffect, 
@@ -12,8 +13,7 @@ import {
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword, 
     signOut,
-    type User,
-    type Auth
+    type User
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import type { LoginData, SignUpData } from '@/lib/types';
@@ -61,10 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout
     };
 
-    return (
-        <AuthContext.Provider value={value}>
-            {!loading && children}
-        </AuthContext.Provider>
+    return React.createElement(
+        AuthContext.Provider, 
+        { value: value }, 
+        loading ? null : children
     );
 }
 

@@ -5,7 +5,7 @@ import { KanbanBoard } from '@/components/kanban-board';
 import { useTasks } from '@/hooks/use-tasks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, SlidersHorizontal, Search } from 'lucide-react';
+import { X, SlidersHorizontal, Search, BrainCircuit, Loader2 } from 'lucide-react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { Priority } from '@/lib/types';
 import { isPast, isToday, isThisWeek } from 'date-fns';
@@ -13,17 +13,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
+import { prioritizeTasks } from '@/ai/flows/prioritize-tasks-flow';
+import { useToast } from '@/hooks/use-toast';
 
 export default function BoardPage() {
   const { 
     tasks, 
     updateTask,
+    updateMultipleTasks,
     deleteTask,
     moveTask, 
     isInitialized 
   } = useTasks();
-
+  
+  const { toast } = useToast();
+  const [isPrioritizing, setIsPrioritizing] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [priorityFilter, setPriorityFilter] = React.useState<Priority[]>([]);
   const [dateFilter, setDateFilter] = React.useState('all');
@@ -63,6 +67,47 @@ export default function BoardPage() {
   
   const hasActiveFilters = priorityFilter.length > 0 || dateFilter !== 'all' || searchQuery !== '';
 
+  const handleSmartSort = async () => {
+    setIsPrioritizing(true);
+    try {
+      const tasksToSort = tasks
+        .filter(t => t.status !== 'Done')
+        .map(t => ({ id: t.id, title: t.title, description: t.description || ''}));
+
+      if (tasksToSort.length === 0) {
+        toast({
+          title: "Nothing to sort",
+          description: "All your tasks are already marked as Done.",
+        });
+        return;
+      }
+      
+      const result = await prioritizeTasks({ tasks: tasksToSort });
+
+      const updates = result.prioritizedTasks.map(p => ({
+        taskId: p.id,
+        data: { priority: p.priority },
+      }));
+
+      updateMultipleTasks(updates);
+      
+      toast({
+          title: "Board Sorted!",
+          description: `AI has re-prioritized ${updates.length} tasks.`,
+      });
+
+    } catch (error) {
+        console.error("AI Smart Sort failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "AI Smart Sort failed. Please try again.",
+        });
+    } finally {
+        setIsPrioritizing(false);
+    }
+  };
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 md:p-6 border-b">
@@ -78,6 +123,10 @@ export default function BoardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleSmartSort} disabled={isPrioritizing}>
+              {isPrioritizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+              Smart Sort
+            </Button>
            <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline">

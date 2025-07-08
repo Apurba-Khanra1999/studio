@@ -236,6 +236,24 @@ function MainLayout({
     }
   }, [tasks, notificationsContext]);
 
+  const updateMultipleTasks = React.useCallback((updates: { taskId: string; data: Partial<Omit<Task, 'id'>> }[]) => {
+    if (updates.length === 0) return;
+
+    const updateMap = new Map(updates.map(u => [u.taskId, u.data]));
+
+    setTasks(prevTasks =>
+      prevTasks.map(task => {
+        if (updateMap.has(task.id)) {
+          return { ...task, ...updateMap.get(task.id) };
+        }
+        return task;
+      })
+    );
+    
+    notificationsContext.addNotification({ message: `AI has re-prioritized ${updates.length} tasks.` });
+  }, [notificationsContext]);
+
+
   const deleteTask = React.useCallback((taskId: string) => {
     const taskToDelete = tasks.find(task => task.id === taskId);
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
@@ -248,7 +266,7 @@ function MainLayout({
     updateTask(taskId, { status: newStatus });
   }, [updateTask]);
 
-  const value = { tasks, setTasks, addTask, updateTask, deleteTask, moveTask, isInitialized };
+  const value = { tasks, setTasks, addTask, updateTask, updateMultipleTasks, deleteTask, moveTask, isInitialized };
   
   return (
     <TasksContext.Provider value={value}>

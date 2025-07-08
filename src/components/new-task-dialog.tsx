@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Wand2, Loader2, Plus, Calendar as CalendarIcon, Trash2, Image as ImageIcon, UploadCloud } from 'lucide-react';
+import { Wand2, Loader2, Plus, Calendar as CalendarIcon, Trash2, Image as ImageIcon, UploadCloud, Sparkles } from 'lucide-react';
 import type { Priority, Subtask } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -27,13 +27,10 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-
-import { generateTaskDescription } from '@/ai/flows/generate-task-description';
-import { determineTaskPriority } from '@/ai/flows/determine-task-priority';
 import { generateSubtasks } from '@/ai/flows/generate-subtasks';
-import { generateTaskImage } from '@/ai/flows/generate-task-image';
+import { generateFullTaskFromTitle } from '@/ai/flows/generate-full-task-from-title';
+
 
 const taskSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters long."),
@@ -56,10 +53,8 @@ interface NewTaskDialogProps {
 
 export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
-  const [isDeterminingPriority, setIsDeterminingPriority] = useState(false);
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isSmartCreating, setIsSmartCreating] = useState(false);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,51 +70,37 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     },
   });
 
-  const handleGenerateDescription = async () => {
+  const handleSmartCreate = async () => {
     const title = form.getValues("title");
     if (!title) {
-      form.setError("title", { message: "Please enter a title first." });
+      form.setError("title", { message: "Please enter a title to use Smart Create." });
       return;
     }
-
-    setIsGeneratingDesc(true);
+    setIsSmartCreating(true);
     try {
-      const result = await generateTaskDescription({ title });
-      form.setValue("description", result.description);
-    } catch (error) {
-      console.error("AI description generation failed:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to generate task description.",
-      });
-    } finally {
-      setIsGeneratingDesc(false);
-    }
-  };
-  
-  const handleDeterminePriority = async () => {
-    const title = form.getValues("title");
-    const description = form.getValues("description") || "";
-    
-    if (!title) {
-      form.setError("title", { message: "Please enter a title to suggest a priority." });
-      return;
-    }
+        const result = await generateFullTaskFromTitle({ title });
+        form.setValue("description", result.description, { shouldDirty: true });
+        form.setValue("priority", result.priority, { shouldDirty: true });
+        form.setValue("imageUrl", result.imageUrl, { shouldDirty: true });
 
-    setIsDeterminingPriority(true);
-    try {
-      const result = await determineTaskPriority({ title, description });
-      form.setValue("priority", result.priority);
+        const newSubtasks = result.subtasks.map(text => ({
+            id: `gen-${Date.now()}-${Math.random()}`,
+            text,
+            completed: false,
+        }));
+        
+        const currentSubtasks = form.getValues('subtasks') || [];
+        form.setValue('subtasks', [...currentSubtasks, ...newSubtasks], { shouldDirty: true });
+
     } catch (error) {
-      console.error("AI priority determination failed:", error);
-       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to determine task priority.",
-      });
+        console.error("AI Smart Create failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "AI Smart Create failed. Please try again or fill the fields manually.",
+        });
     } finally {
-      setIsDeterminingPriority(false);
+        setIsSmartCreating(false);
     }
   };
   
@@ -151,28 +132,6 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
       });
     } finally {
       setIsGeneratingSubtasks(false);
-    }
-  };
-
-  const handleGenerateImage = async () => {
-    const title = form.getValues("title");
-    if (!title) {
-      form.setError("title", { message: "Please enter a title first." });
-      return;
-    }
-    setIsGeneratingImage(true);
-    try {
-      const result = await generateTaskImage({ title });
-      form.setValue('imageUrl', result.imageUrl);
-    } catch (error) {
-      console.error("AI image generation failed:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to generate task image.",
-      });
-    } finally {
-      setIsGeneratingImage(false);
     }
   };
 
@@ -252,7 +211,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
         <DialogHeader className="p-6 pb-4 flex-shrink-0">
           <DialogTitle>Create a new task</DialogTitle>
           <DialogDescription>
-            Fill in the details below. Use AI to help generate the description and set a priority.
+            Fill in the details below, or use AI Smart Create to do it for you.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto">
@@ -264,9 +223,21 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Title</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Title</FormLabel>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleSmartCreate}
+                          disabled={isSmartCreating || !form.watch("title")}
+                        >
+                          {isSmartCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 text-primary" />}
+                          AI Smart Create
+                        </Button>
+                      </div>
                       <FormControl>
-                        <Input placeholder="e.g., Implement user authentication" {...field} />
+                        <Input placeholder="e.g., Launch new marketing campaign" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -279,29 +250,12 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Textarea
+                        <Textarea
                             placeholder="A detailed description of the task..."
-                            className="resize-none pr-10"
+                            className="resize-none"
                             rows={4}
                             {...field}
                           />
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="absolute right-2 top-2 h-7 w-7"
-                            onClick={handleGenerateDescription}
-                            disabled={isGeneratingDesc || !form.getValues("title")}
-                            aria-label="Generate description with AI"
-                          >
-                            {isGeneratingDesc ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Wand2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -313,24 +267,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                     name="priority"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <span>Priority</span>
-                          <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-5 w-5"
-                              onClick={handleDeterminePriority}
-                              disabled={isDeterminingPriority || !form.getValues("title")}
-                              aria-label="Suggest priority with AI"
-                            >
-                              {isDeterminingPriority ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Wand2 className="h-3 w-3" />
-                              )}
-                            </Button>
-                        </FormLabel>
+                        <FormLabel>Priority</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -351,8 +288,8 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                       control={form.control}
                       name="dueDate"
                       render={({ field }) => (
-                        <FormItem className="flex flex-col pt-[1.62rem]">
-                          <FormLabel className="sr-only">Due Date</FormLabel>
+                        <FormItem className="flex flex-col pt-2">
+                           <FormLabel>Due Date</FormLabel>
                           <Popover>
                             <PopoverTrigger asChild>
                               <FormControl>
@@ -419,50 +356,24 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                           <p className="text-sm text-muted-foreground">No image added for this task.</p>
                       </div>
                     )}
-                    <Tabs defaultValue="ai" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="ai">
-                          <Wand2 className="mr-2 h-4 w-4" />
-                           Generate with AI
-                        </TabsTrigger>
-                        <TabsTrigger value="upload">
-                          <UploadCloud className="mr-2 h-4 w-4" />
-                           Upload Image
-                        </TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="ai" className="pt-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full"
-                          onClick={handleGenerateImage}
-                          disabled={isGeneratingImage || !form.getValues('title')}
-                        >
-                          {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                          {form.watch('imageUrl') ? 'Generate a new image' : 'Generate an image'}
-                        </Button>
-                      </TabsContent>
-                      <TabsContent value="upload" className="pt-2">
-                        <div className="relative">
-                          <Input
-                            id="image-upload-new"
-                            type="file"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            accept="image/png, image/jpeg, image/gif"
-                            onChange={handleImageUpload}
-                            ref={fileInputRef}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full pointer-events-none"
-                          >
-                            <UploadCloud className="mr-2 h-4 w-4" />
-                            Choose from device
-                          </Button>
-                        </div>
-                      </TabsContent>
-                    </Tabs>
+                    <div className="relative">
+                      <Input
+                        id="image-upload-new"
+                        type="file"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        accept="image/png, image/jpeg, image/gif"
+                        onChange={handleImageUpload}
+                        ref={fileInputRef}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full pointer-events-none"
+                      >
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                        Choose from device
+                      </Button>
+                    </div>
                 </div>
 
                 <Separator />

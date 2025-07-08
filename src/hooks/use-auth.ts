@@ -35,11 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = { user, loading, signOut };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return React.createElement(AuthContext.Provider, { value: value }, children);
 }
 
 export function useAuth() {

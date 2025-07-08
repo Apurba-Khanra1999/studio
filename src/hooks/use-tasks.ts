@@ -3,7 +3,7 @@
 import { createContext, useContext } from 'react';
 import type { Task, Status, Priority, Subtask } from '@/lib/types';
 
-export const getTasksLocalStorageKey = () => `taskflow-tasks`;
+export const getTasksLocalStorageKey = (userId: string) => `taskflow-tasks-${userId}`;
 
 export const initialTasks: Task[] = [
     {

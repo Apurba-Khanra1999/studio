@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { NewTaskDialog } from '@/components/new-task-dialog';
 import { 
   TasksContext,
@@ -14,7 +14,8 @@ import {
   getNotificationsLocalStorageKey,
   generateId as generateNotificationId,
 } from '@/hooks/use-notifications';
-import { KanbanSquare, LayoutDashboard, Calendar, Search } from 'lucide-react';
+import { AuthProvider, useAuth } from '@/hooks/use-auth';
+import { KanbanSquare, LayoutDashboard, Calendar, Search, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { QuickTaskEntry } from "@/components/quick-task-entry";
@@ -23,12 +24,21 @@ import * as React from 'react';
 import type { Task, Status, Priority, Subtask, Notification } from '@/lib/types';
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/command-palette";
+import { UserNav } from "@/components/user-nav";
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
-  const { tasks, addTask, updateTask, deleteTask } = React.useContext(TasksContext)!;
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const pathname = usePathname();
+  const { tasks, addTask, updateTask, deleteTask } = React.useContext(TasksContext)!;
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
+    }
+  }, [user, loading, router]);
+  
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -46,6 +56,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     { href: "/calendar", label: "Calendar", icon: Calendar },
   ];
 
+  if (loading || !user) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
   return (
     <>
       <CommandPalette 
@@ -62,7 +80,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <h1 className="text-xl font-bold tracking-tight text-foreground">TaskFlow</h1>
           </div>
 
-          <nav className="ml-6 flex items-center space-x-4 lg:space-x-6">
+          <nav className="ml-6 hidden md:flex items-center space-x-4 lg:space-x-6">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -86,6 +104,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <NewTaskDialog addTask={addTask} />
             <NotificationBell />
             <ThemeToggle />
+            <UserNav />
           </div>
         </header>
         <main className="flex-1 overflow-auto">{children}</main>
@@ -95,21 +114,24 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 
-function MainLayout({
+function MainLayoutWithProviders({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const { user, loading } = useAuth();
+  
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [tasksInitialized, setTasksInitialized] = React.useState(false);
   
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [notificationsInitialized, setNotificationsInitialized] = React.useState(false);
 
-  // Load tasks from localStorage
+  // Load tasks from localStorage when user is available
   React.useEffect(() => {
+      if (loading || !user) return;
       try {
-        const key = getTasksLocalStorageKey();
+        const key = getTasksLocalStorageKey(user.uid);
         const item = window.localStorage.getItem(key);
         if (item) {
           let parsedTasks = JSON.parse(item, (key, value) => {
@@ -128,24 +150,25 @@ function MainLayout({
         setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
       }
       setTasksInitialized(true);
-  }, []);
+  }, [user, loading]);
 
   // Save tasks to localStorage
   React.useEffect(() => {
-    if (tasksInitialized) {
+    if (tasksInitialized && user) {
       try {
-        const key = getTasksLocalStorageKey();
+        const key = getTasksLocalStorageKey(user.uid);
         window.localStorage.setItem(key, JSON.stringify(tasks));
       } catch (error) {
         console.error("Failed to save tasks to localStorage", error);
       }
     }
-  }, [tasks, tasksInitialized]);
+  }, [tasks, tasksInitialized, user]);
 
   // Load notifications from localStorage
   React.useEffect(() => {
+      if (loading || !user) return;
       try {
-          const key = getNotificationsLocalStorageKey();
+          const key = getNotificationsLocalStorageKey(user.uid);
           const item = window.localStorage.getItem(key);
           if (item) {
               const parsedNotifications = JSON.parse(item, (key, value) => {
@@ -160,19 +183,19 @@ function MainLayout({
           console.error("Failed to load notifications from localStorage", error);
       }
       setNotificationsInitialized(true);
-  }, []);
+  }, [user, loading]);
 
   // Save notifications to localStorage
   React.useEffect(() => {
-      if (notificationsInitialized) {
+      if (notificationsInitialized && user) {
           try {
-              const key = getNotificationsLocalStorageKey();
+              const key = getNotificationsLocalStorageKey(user.uid);
               window.localStorage.setItem(key, JSON.stringify(notifications));
           } catch (error) {
               console.error("Failed to save notifications to localStorage", error);
           }
       }
-  }, [notifications, notificationsInitialized]);
+  }, [notifications, notificationsInitialized, user]);
 
 
   const addNotification = React.useCallback((notificationData: { message: string }) => {
@@ -232,8 +255,8 @@ function MainLayout({
     updateTask(taskId, { status: newStatus });
   }, [updateTask]);
   
-  const tasksContextValue = { tasks, setTasks, addTask, updateTask, updateMultipleTasks, deleteTask, moveTask, isInitialized: tasksInitialized };
-  const notificationsContextValue = { notifications, addNotification, markAllAsRead, unreadCount, isInitialized: notificationsInitialized };
+  const tasksContextValue = { tasks, setTasks, addTask, updateTask, updateMultipleTasks, deleteTask, moveTask, isInitialized: tasksInitialized && !!user };
+  const notificationsContextValue = { notifications, addNotification, markAllAsRead, unreadCount, isInitialized: notificationsInitialized && !!user };
 
   return (
     <TasksContext.Provider value={tasksContextValue}>
@@ -246,4 +269,16 @@ function MainLayout({
   );
 }
 
-export default MainLayout;
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <AuthProvider>
+      <MainLayoutWithProviders>
+        {children}
+      </MainLayoutWithProviders>
+    </AuthProvider>
+  )
+}

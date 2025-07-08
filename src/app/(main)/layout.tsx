@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { NewTaskDialog } from '@/components/new-task-dialog';
 import { 
   TasksContext,
@@ -21,39 +21,8 @@ import { QuickTaskEntry } from "@/components/quick-task-entry";
 import { NotificationBell } from "@/components/notification-bell";
 import * as React from 'react';
 import type { Task, Status, Priority, Subtask, Notification } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/command-palette";
-import { Skeleton } from "@/components/ui/skeleton";
-import { UserNav } from "@/components/user-nav";
-
-function FullScreenLoader() {
-    return (
-        <div className="flex min-h-screen w-full flex-col bg-background">
-             <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-                <div className="flex items-center gap-2">
-                    <KanbanSquare className="h-6 w-6 text-primary" />
-                     <Skeleton className="h-6 w-24" />
-                </div>
-                 <div className="ml-6 flex items-center space-x-4 lg:space-x-6">
-                     <Skeleton className="h-6 w-20" />
-                     <Skeleton className="h-6 w-20" />
-                     <Skeleton className="h-6 w-20" />
-                 </div>
-                 <div className="ml-auto flex items-center gap-2">
-                     <Skeleton className="h-10 w-10" />
-                     <Skeleton className="h-10 w-28" />
-                     <Skeleton className="h-10 w-10" />
-                     <Skeleton className="h-10 w-10" />
-                     <Skeleton className="h-10 w-10 rounded-full" />
-                 </div>
-            </header>
-            <main className="flex-1 overflow-auto p-6">
-                <Skeleton className="h-full w-full" />
-            </main>
-        </div>
-    )
-}
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const { tasks, addTask, updateTask, deleteTask } = React.useContext(TasksContext)!;
@@ -117,7 +86,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
             <NewTaskDialog addTask={addTask} />
             <NotificationBell />
             <ThemeToggle />
-            <UserNav />
           </div>
         </header>
         <main className="flex-1 overflow-auto">{children}</main>
@@ -132,27 +100,16 @@ function MainLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [tasksInitialized, setTasksInitialized] = React.useState(false);
   
   const [notifications, setNotifications] = React.useState<Notification[]>([]);
   const [notificationsInitialized, setNotificationsInitialized] = React.useState(false);
 
-  // Redirect to login if not authenticated
+  // Load tasks from localStorage
   React.useEffect(() => {
-    if (!authLoading && !user) {
-      router.replace('/login');
-    }
-  }, [user, authLoading, router]);
-
-  // Load tasks from localStorage when user is available
-  React.useEffect(() => {
-    if (user?.uid) {
       try {
-        const key = getTasksLocalStorageKey(user.uid);
+        const key = getTasksLocalStorageKey();
         const item = window.localStorage.getItem(key);
         if (item) {
           let parsedTasks = JSON.parse(item, (key, value) => {
@@ -171,54 +128,51 @@ function MainLayout({
         setTasks(initialTasks.map(t => ({...t, subtasks: t.subtasks || []})));
       }
       setTasksInitialized(true);
-    }
-  }, [user?.uid]);
+  }, []);
 
   // Save tasks to localStorage
   React.useEffect(() => {
-    if (tasksInitialized && user?.uid) {
+    if (tasksInitialized) {
       try {
-        const key = getTasksLocalStorageKey(user.uid);
+        const key = getTasksLocalStorageKey();
         window.localStorage.setItem(key, JSON.stringify(tasks));
       } catch (error) {
         console.error("Failed to save tasks to localStorage", error);
       }
     }
-  }, [tasks, tasksInitialized, user?.uid]);
+  }, [tasks, tasksInitialized]);
 
   // Load notifications from localStorage
   React.useEffect(() => {
-    if (user?.uid) {
-        try {
-            const key = getNotificationsLocalStorageKey(user.uid);
-            const item = window.localStorage.getItem(key);
-            if (item) {
-                const parsedNotifications = JSON.parse(item, (key, value) => {
-                    if (key === 'timestamp' && value) return new Date(value);
-                    return value;
-                });
-                if (Array.isArray(parsedNotifications)) {
-                    setNotifications(parsedNotifications);
-                }
-            }
-        } catch (error) {
-            console.error("Failed to load notifications from localStorage", error);
-        }
-        setNotificationsInitialized(true);
-    }
-  }, [user?.uid]);
+      try {
+          const key = getNotificationsLocalStorageKey();
+          const item = window.localStorage.getItem(key);
+          if (item) {
+              const parsedNotifications = JSON.parse(item, (key, value) => {
+                  if (key === 'timestamp' && value) return new Date(value);
+                  return value;
+              });
+              if (Array.isArray(parsedNotifications)) {
+                  setNotifications(parsedNotifications);
+              }
+          }
+      } catch (error) {
+          console.error("Failed to load notifications from localStorage", error);
+      }
+      setNotificationsInitialized(true);
+  }, []);
 
   // Save notifications to localStorage
   React.useEffect(() => {
-      if (notificationsInitialized && user?.uid) {
+      if (notificationsInitialized) {
           try {
-              const key = getNotificationsLocalStorageKey(user.uid);
+              const key = getNotificationsLocalStorageKey();
               window.localStorage.setItem(key, JSON.stringify(notifications));
           } catch (error) {
               console.error("Failed to save notifications to localStorage", error);
           }
       }
-  }, [notifications, notificationsInitialized, user?.uid]);
+  }, [notifications, notificationsInitialized]);
 
 
   const addNotification = React.useCallback((notificationData: { message: string }) => {
@@ -278,11 +232,6 @@ function MainLayout({
     updateTask(taskId, { status: newStatus });
   }, [updateTask]);
   
-  // While authenticating or if not authenticated, show a loader
-  if (authLoading || !user) {
-    return <FullScreenLoader />;
-  }
-
   const tasksContextValue = { tasks, setTasks, addTask, updateTask, updateMultipleTasks, deleteTask, moveTask, isInitialized: tasksInitialized };
   const notificationsContextValue = { notifications, addNotification, markAllAsRead, unreadCount, isInitialized: notificationsInitialized };
 

@@ -3,7 +3,7 @@
 import { createContext, useContext } from 'react';
 import type { Notification } from '@/lib/types';
 
-export const getNotificationsLocalStorageKey = (userId: string) => `taskflow-notifications-${userId}`;
+export const getNotificationsLocalStorageKey = () => `taskflow-notifications`;
 
 export const generateId = () => `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 

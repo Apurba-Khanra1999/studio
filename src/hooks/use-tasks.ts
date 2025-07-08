@@ -2,9 +2,8 @@
 
 import { createContext, useContext } from 'react';
 import type { Task, Status, Priority, Subtask } from '@/lib/types';
-import { useAuth } from './use-auth';
 
-export const getTasksLocalStorageKey = (userId: string) => `taskflow-tasks-${userId}`;
+export const getTasksLocalStorageKey = () => `taskflow-tasks`;
 
 export const initialTasks: Task[] = [
     {

@@ -16,12 +16,6 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
     ],
   },
   allowedDevOrigins: ['https://*.cloudworkstations.dev'],

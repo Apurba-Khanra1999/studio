@@ -18,7 +18,7 @@ export const initialTasks: Task[] = [
         { id: 'sub-1-2', text: 'Create wireframes', completed: true },
         { id: 'sub-1-3', text: 'Design hero section', completed: false },
       ],
-      imageUrl: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?q=80&w=600&auto=format&fit=crop',
+      imageUrl: 'https://placehold.co/600x400.png',
     },
     {
       id: 'task-2',
@@ -27,7 +27,7 @@ export const initialTasks: Task[] = [
       status: 'In Progress',
       priority: 'High',
       subtasks: [],
-      imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=600&auto=format&fit=crop',
+      imageUrl: 'https://placehold.co/600x400.png',
     },
     {
       id: 'task-3',

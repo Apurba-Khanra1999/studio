@@ -27,9 +27,12 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { generateSubtasks } from '@/ai/flows/generate-subtasks';
 import { generateFullTaskFromTitle } from '@/ai/flows/generate-full-task-from-title';
+import { generateTaskDescription } from '@/ai/flows/generate-task-description';
+import { generateTaskImage } from '@/ai/flows/generate-task-image';
 
 
 const taskSchema = z.object({
@@ -54,6 +57,8 @@ interface NewTaskDialogProps {
 export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSmartCreating, setIsSmartCreating] = useState(false);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const { toast } = useToast();
@@ -104,6 +109,50 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     }
   };
   
+  const handleGenerateDescription = async () => {
+    const title = form.getValues("title");
+    if (!title) {
+      form.setError("title", { message: "Please enter a title first." });
+      return;
+    }
+    setIsGeneratingDescription(true);
+    try {
+      const result = await generateTaskDescription({ title });
+      form.setValue("description", result.description, { shouldDirty: true });
+    } catch (error) {
+      console.error("AI description generation failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to generate a description.",
+      });
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+  
+  const handleGenerateImage = async () => {
+    const title = form.getValues("title");
+    if (!title) {
+      form.setError("title", { message: "Please enter a title first to generate an image." });
+      return;
+    }
+    setIsGeneratingImage(true);
+    try {
+      const result = await generateTaskImage({ title: form.getValues('title') });
+      form.setValue('imageUrl', result.imageUrl, { shouldDirty: true });
+    } catch (error) {
+      console.error("AI image generation failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to generate task image.",
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const handleGenerateSubtasks = async () => {
     const title = form.getValues("title");
     if (!title) {
@@ -211,7 +260,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
         <DialogHeader className="p-6 pb-4 flex-shrink-0">
           <DialogTitle>Create a new task</DialogTitle>
           <DialogDescription>
-            Fill in the details below, or use AI Smart Create to do it for you.
+            Fill in the details below, or use AI to help you along the way.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto">
@@ -248,7 +297,19 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Description</FormLabel>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleGenerateDescription}
+                          disabled={isGeneratingDescription || !form.watch("title")}
+                        >
+                          {isGeneratingDescription ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                          Generate with AI
+                        </Button>
+                      </div>
                       <FormControl>
                         <Textarea
                             placeholder="A detailed description of the task..."
@@ -356,24 +417,50 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                           <p className="text-sm text-muted-foreground">No image added for this task.</p>
                       </div>
                     )}
-                    <div className="relative">
-                      <Input
-                        id="image-upload-new"
-                        type="file"
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        accept="image/png, image/jpeg, image/gif"
-                        onChange={handleImageUpload}
-                        ref={fileInputRef}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full pointer-events-none"
-                      >
-                        <UploadCloud className="mr-2 h-4 w-4" />
-                        Choose from device
-                      </Button>
-                    </div>
+                    <Tabs defaultValue="ai" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="ai">
+                          <Wand2 className="mr-2 h-4 w-4" />
+                           Generate with AI
+                        </TabsTrigger>
+                        <TabsTrigger value="upload">
+                          <UploadCloud className="mr-2 h-4 w-4" />
+                           Upload Image
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="ai" className="pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage || !form.getValues('title')}
+                        >
+                          {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                          {form.watch('imageUrl') ? 'Generate a new image' : 'Generate an image'}
+                        </Button>
+                      </TabsContent>
+                      <TabsContent value="upload" className="pt-2">
+                        <div className="relative">
+                          <Input
+                            id="image-upload-new"
+                            type="file"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            accept="image/png, image/jpeg, image/gif"
+                            onChange={handleImageUpload}
+                            ref={fileInputRef}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full pointer-events-none"
+                          >
+                            <UploadCloud className="mr-2 h-4 w-4" />
+                            Choose from device
+                          </Button>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                 </div>
 
                 <Separator />

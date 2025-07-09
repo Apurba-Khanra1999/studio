@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
 export default function RootPage() {
-  redirect('/login');
+  // The main layout will handle redirecting to /login if the user is not authenticated.
+  redirect('/board');
 }

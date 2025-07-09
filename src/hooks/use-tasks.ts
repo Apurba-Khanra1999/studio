@@ -18,7 +18,7 @@ export const initialTasks: Task[] = [
         { id: 'sub-1-2', text: 'Create wireframes', completed: true },
         { id: 'sub-1-3', text: 'Design hero section', completed: false },
       ],
-      imageUrl: 'https://placehold.co/600x400.png',
+      imageUrl: 'https://images.pexels.com/photos/285814/pexels-photo-285814.jpeg',
     },
     {
       id: 'task-2',
@@ -27,7 +27,7 @@ export const initialTasks: Task[] = [
       status: 'In Progress',
       priority: 'High',
       subtasks: [],
-      imageUrl: 'https://placehold.co/600x400.png',
+      imageUrl: 'https://images.pexels.com/photos/5380664/pexels-photo-5380664.jpeg',
     },
     {
       id: 'task-3',

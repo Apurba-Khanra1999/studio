@@ -54,7 +54,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     { href: "/board", label: "Board", icon: KanbanSquare },
     { href: "/dashboard",label: "Dashboard", icon: LayoutDashboard },
     { href: "/calendar", label: "Calendar", icon: Calendar },
-    { href: "/about", label: "About", icon: BookOpen },
+    { href: "/about", label: "Documentation", icon: BookOpen },
   ];
 
   if (loading || !user) {

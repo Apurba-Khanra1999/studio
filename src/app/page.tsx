@@ -87,24 +87,33 @@ export default function RootPage() {
       <LandingHeader />
       <main className="mt-16">
         {/* Hero Section */}
-        <section className="py-20 md:py-32">
+        <section className="relative pt-24 pb-20 md:pt-32 md:pb-28 overflow-hidden">
+          <div className="absolute inset-0 -z-10 bg-radial-gradient-primary" />
           <div className="container mx-auto px-4 md:px-6 text-center">
-            <div className="bg-primary text-primary-foreground inline-block rounded-full px-4 py-1 text-sm font-semibold mb-4">
-                Supercharged with Generative AI
+            <div
+              className="bg-primary/10 text-primary border border-primary/20 inline-block rounded-full px-4 py-1.5 text-sm font-semibold mb-4 shadow-sm animate-fade-in-up"
+            >
+              Supercharged with Generative AI
             </div>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-6">
-                From Chaos to Clarity, Instantly.
+            <h1
+              className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70 animate-fade-in-up [animation-delay:0.2s]"
+            >
+              From Chaos to Clarity, Instantly.
             </h1>
-            <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-8">
-                TaskFlow is the intelligent project manager that uses AI to automate your workflow, structure your tasks, and bring focus to your team. Go from idea to execution, faster than ever before.
+            <p
+              className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-10 animate-fade-in-up [animation-delay:0.3s]"
+            >
+              TaskFlow is the intelligent project manager that uses AI to automate your workflow, structure your tasks, and bring focus to your team. Go from idea to execution, faster than ever before.
             </p>
-            <div className="flex justify-center gap-4">
-                <Button size="lg" asChild>
-                    <Link href="/signup">Get Started for Free</Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                    <Link href="#features">Learn More</Link>
-                </Button>
+            <div
+              className="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up [animation-delay:0.4s]"
+            >
+              <Button size="lg" asChild className="shadow-lg shadow-primary/20 hover:scale-105 transition-transform duration-300">
+                <Link href="/signup">Get Started for Free</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="bg-background/50 backdrop-blur-sm hover:scale-105 transition-transform duration-300">
+                <Link href="#features">Learn More</Link>
+              </Button>
             </div>
           </div>
         </section>

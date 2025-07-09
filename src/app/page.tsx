@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { KanbanSquare, BrainCircuit, Blocks, Sparkles, Move, Users, ShieldCheck } from 'lucide-react';
+import { KanbanSquare, BrainCircuit, Blocks, Sparkles, Move, Users, ShieldCheck, Zap, Lock } from 'lucide-react';
 
 const LandingHeader = () => (
   <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm">
@@ -32,7 +32,7 @@ const LandingHeader = () => (
 );
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-    <Card className="text-center flex flex-col items-center p-4">
+    <Card className="text-center flex flex-col items-center p-4 bg-card/50">
         <CardHeader>
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
                 {icon}
@@ -46,9 +46,9 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, titl
 );
 
 const TestimonialCard = ({ name, role, text, avatarSrc }: { name: string, role: string, text: string, avatarSrc: string }) => (
-    <Card className="p-6">
-        <CardContent className="p-0">
-            <blockquote className="text-muted-foreground">"{text}"</blockquote>
+    <Card className="p-6 h-full">
+        <CardContent className="p-0 flex flex-col h-full">
+            <blockquote className="text-muted-foreground flex-grow">"{text}"</blockquote>
             <div className="mt-4 flex items-center gap-4">
                 <Avatar>
                     <AvatarImage src={avatarSrc} alt={name} data-ai-hint="person portrait"/>
@@ -93,10 +93,10 @@ export default function RootPage() {
                 Supercharged with Generative AI
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-6">
-                Organize your work, finally.
+                From Chaos to Clarity, Instantly.
             </h1>
-            <p className="max-w-2xl mx-auto text-lg text-muted-foreground mb-8">
-                From chaotic to-do lists to streamlined workflows. TaskFlow is the AI-powered task manager that helps you focus on what truly matters.
+            <p className="max-w-3xl mx-auto text-lg text-muted-foreground mb-8">
+                TaskFlow is the intelligent project manager that uses AI to automate your workflow, structure your tasks, and bring focus to your team. Go from idea to execution, faster than ever before.
             </p>
             <div className="flex justify-center gap-4">
                 <Button size="lg" asChild>
@@ -110,11 +110,11 @@ export default function RootPage() {
         </section>
 
         {/* Visual App Preview Section */}
-        <section className="container mx-auto px-4 md:px-6 mb-20">
+        <section className="container mx-auto px-4 md:px-6 mb-20 md:mb-32">
             <div className="relative rounded-xl shadow-2xl overflow-hidden border">
                 <Image 
                     src="https://placehold.co/1200x700.png"
-                    alt="TaskFlow application interface showing a Kanban board"
+                    alt="TaskFlow application interface showing a Kanban board with AI-generated tasks and images"
                     width={1200}
                     height={700}
                     className="w-full"
@@ -124,55 +124,84 @@ export default function RootPage() {
             </div>
         </section>
 
+         {/* The TaskFlow Difference Section */}
+        <section className="py-20 md:py-24">
+            <div className="container mx-auto px-4 md:px-6">
+                <div className="grid md:grid-cols-3 gap-12 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <Zap className="h-6 w-6" />
+                        </div>
+                        <h3 className="text-xl font-bold">Effortless Speed</h3>
+                        <p className="text-muted-foreground">From natural language input to AI-generated tasks, we eliminate friction so you can move faster.</p>
+                    </div>
+                     <div className="flex flex-col items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <BrainCircuit className="h-6 w-6" />
+                        </div>
+                        <h3 className="text-xl font-bold">Built-in Intelligence</h3>
+                        <p className="text-muted-foreground">Our AI doesn't just fill fields; it helps you strategize, prioritize, and break down complex work.</p>
+                    </div>
+                     <div className="flex flex-col items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <Lock className="h-6 w-6" />
+                        </div>
+                        <h3 className="text-xl font-bold">Ultimate Privacy</h3>
+                        <p className="text-muted-foreground">Your data stays with you. TaskFlow runs in your browser with no cloud sync or external servers.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         {/* Features Section */}
-        <section id="features" className="py-20 bg-muted">
+        <section id="features" className="py-20 md:py-24 bg-muted">
             <div className="container mx-auto px-4 md:px-6">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl md:text-4xl font-bold">Everything you need to be productive</h2>
                     <p className="max-w-xl mx-auto text-muted-foreground mt-4">
-                        TaskFlow combines powerful features with a delightful user experience to keep you and your projects on track.
+                        TaskFlow combines powerful task management with delightful AI features to keep you and your projects on track.
                     </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <FeatureCard 
                         icon={<Sparkles className="h-6 w-6" />}
-                        title="AI Smart Assistant"
-                        description="Generate tasks, descriptions, and subtasks from a single line of text. Let our AI handle the busywork so you can focus on execution."
+                        title="AI Smart Create"
+                        description="Just provide a title. Our AI assistant generates a full task brief, including a detailed description, priority level, actionable subtasks, and even a custom cover image."
                     />
                     <FeatureCard 
                         icon={<Move className="h-6 w-6" />}
                         title="Intuitive Kanban Board"
-                        description="Visually organize your work with a simple drag-and-drop interface. Move tasks seamlessly between To Do, In Progress, and Done."
+                        description="Visually organize your work with a simple drag-and-drop interface. Get an instant overview of your project's progress from 'To Do' to 'Done'."
                     />
                     <FeatureCard 
                         icon={<BrainCircuit className="h-6 w-6" />}
                         title="Intelligent Prioritization"
-                        description="Use 'Smart Sort' to let AI analyze and re-prioritize your tasks, ensuring you're always working on what's most important."
+                        description="Click 'Smart Sort' and let AI analyze your tasks for urgency and importance, re-prioritizing your list so you can focus on what matters most."
                     />
                      <FeatureCard 
                         icon={<Blocks className="h-6 w-6" />}
-                        title="Detailed Task Management"
-                        description="Add due dates, subtasks, cover images, and detailed descriptions to keep all your project information in one place."
+                        title="Rich Task Details"
+                        description="Go beyond a simple to-do. Add due dates, checklists, cover images, and detailed descriptions to keep all your project information in one place."
                     />
                      <FeatureCard 
                         icon={<Users className="h-6 w-6" />}
-                        title="Multiple Views"
-                        description="Switch between Board, Dashboard, and Calendar views to get the perfect perspective on your workload and deadlines."
+                        title="Multiple Project Views"
+                        description="Switch between a high-level Dashboard, a deadline-driven Calendar, and the classic Board view to get the perfect perspective on your work."
                     />
                      <FeatureCard 
                         icon={<ShieldCheck className="h-6 w-6" />}
-                        title="Private & Secure"
-                        description="Your data is your own. All tasks are stored securely in your browser's local storage and are never sent to the cloud."
+                        title="Private & Secure by Design"
+                        description="Your data is yours alone. TaskFlow runs entirely in your browser, using local storage for privacy and security. No cloud accounts needed."
                     />
                 </div>
             </div>
         </section>
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-20">
+        <section id="testimonials" className="py-20 md:py-24">
             <div className="container mx-auto px-4 md:px-6">
                  <div className="text-center mb-12">
-                    <h2 className="text-3xl md:text-4xl font-bold">Loved by users around the world</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold">Loved by productive people</h2>
                     <p className="max-w-xl mx-auto text-muted-foreground mt-4">
                         Don't just take our word for it. Here's what our users are saying about TaskFlow.
                     </p>
@@ -180,20 +209,20 @@ export default function RootPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <TestimonialCard 
                         name="Sarah Johnson"
-                        role="Project Manager"
-                        text="TaskFlow has revolutionized how our team handles projects. The AI features are a game-changer for productivity."
+                        role="Creative Director"
+                        text="The AI Smart Create feature is mind-blowing. It saves me hours of administrative work every week and lets my team focus on the actual creative tasks."
                         avatarSrc="https://placehold.co/100x100.png"
                     />
                     <TestimonialCard 
                         name="Michael Chen"
                         role="Freelance Developer"
-                        text="As a solo developer, staying organized is key. TaskFlow's simple interface and powerful sorting helps me stay on top of everything."
+                        text="As a freelancer, I juggle multiple projects. The 'Smart Sort' feature is my secret weapon for staying on top of deadlines and priorities. I can't imagine my workflow without it."
                         avatarSrc="https://placehold.co/100x100.png"
                     />
                     <TestimonialCard 
                         name="Emily Rodriguez"
                         role="Startup Founder"
-                        text="The visual Kanban board is exactly what my team needed. It’s intuitive, beautiful, and keeps everyone aligned."
+                        text="TaskFlow brought immediate clarity to our startup. The Kanban board is incredibly intuitive, and seeing our entire workflow visually has improved our team's alignment and speed."
                         avatarSrc="https://placehold.co/100x100.png"
                     />
                 </div>
@@ -201,13 +230,13 @@ export default function RootPage() {
         </section>
 
         {/* Final CTA Section */}
-        <section className="py-20 bg-muted">
+        <section className="py-20 md:py-24 bg-muted">
             <div className="container mx-auto px-4 md:px-6 text-center">
                  <h2 className="text-3xl md:text-4xl font-bold tracking-tighter mb-6">
-                    Ready to Boost Your Productivity?
+                    Reclaim your focus. Transform your productivity.
                 </h2>
                 <p className="max-w-xl mx-auto text-lg text-muted-foreground mb-8">
-                    Join thousands of users who are getting more done with less stress.
+                    Join thousands of productive individuals and teams. Get started with TaskFlow for free and experience the future of task management.
                 </p>
                 <Button size="lg" asChild>
                     <Link href="/signup">Start for Free Now</Link>

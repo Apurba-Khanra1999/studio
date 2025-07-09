@@ -19,17 +19,17 @@ export default function AuthLayout({
             <div className="hidden bg-muted lg:block relative">
                 <Image
                     src="https://placehold.co/1920x1080.png"
-                    alt="A modern office space with large windows and plants"
+                    alt="A person focused on their work at a clean desk"
                     width="1920"
                     height="1080"
                     className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-                    data-ai-hint="modern workspace"
+                    data-ai-hint="focused work"
                 />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                  <div className="absolute bottom-0 p-10 text-white">
-                    <h2 className="text-3xl font-bold">Manage your tasks effortlessly.</h2>
-                    <p className="mt-2 text-lg text-white/80">"The key is not to prioritize what's on your schedule, but to schedule your priorities."</p>
-                    <p className="mt-4 font-semibold">- Stephen Covey</p>
+                    <h2 className="text-3xl font-bold">From idea to execution, in one place.</h2>
+                    <p className="mt-2 text-lg text-white/80">"The secret of getting ahead is getting started."</p>
+                    <p className="mt-4 font-semibold">- Mark Twain</p>
                 </div>
             </div>
         </div>

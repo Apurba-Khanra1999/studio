@@ -3,7 +3,7 @@
 
 TaskFlow is a modern, full-featured task management application built with Next.js and supercharged with generative AI capabilities from Google's Gemini models via Genkit. It provides a beautiful and intuitive interface for managing projects, from simple to-do lists to complex Kanban boards.
 
-![TaskFlow Screenshot](https://placehold.co/1200x600.png)
+![TaskFlow Screenshot](https://raw.githubusercontent.com/Apurba-Khanra1999/studio/refs/heads/master/ai-powered-taskflow.png)
 
 ## ✨ Key Features
 

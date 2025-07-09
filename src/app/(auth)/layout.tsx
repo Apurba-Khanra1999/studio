@@ -18,7 +18,7 @@ export default function AuthLayout({
             </div>
             <div className="hidden bg-muted lg:block relative">
                 <Image
-                    src="https://placehold.co/1920x1080.png"
+                    src="https://images.pexels.com/photos/4065133/pexels-photo-4065133.jpeg"
                     alt="A person focused on their work at a clean desk"
                     width="1920"
                     height="1080"

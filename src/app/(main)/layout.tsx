@@ -15,7 +15,7 @@ import {
   generateId as generateNotificationId,
 } from '@/hooks/use-notifications';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
-import { KanbanSquare, LayoutDashboard, Calendar, Search, Loader2 } from 'lucide-react';
+import { KanbanSquare, LayoutDashboard, Calendar, Search, Loader2, BookOpen } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { QuickTaskEntry } from "@/components/quick-task-entry";
@@ -54,6 +54,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
     { href: "/board", label: "Board", icon: KanbanSquare },
     { href: "/dashboard",label: "Dashboard", icon: LayoutDashboard },
     { href: "/calendar", label: "Calendar", icon: Calendar },
+    { href: "/about", label: "About", icon: BookOpen },
   ];
 
   if (loading || !user) {

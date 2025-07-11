@@ -16,7 +16,6 @@ import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { prioritizeTasks } from '@/ai/flows/prioritize-tasks-flow';
 import { useToast } from '@/hooks/use-toast';
-import { useApiKey } from '@/hooks/use-api-key';
 
 export default function BoardPage() {
   const { 
@@ -28,7 +27,6 @@ export default function BoardPage() {
     isInitialized 
   } = useTasks();
   
-  const { apiKey, isApiKeySet } = useApiKey();
   const { toast } = useToast();
   const [isPrioritizing, setIsPrioritizing] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -71,14 +69,6 @@ export default function BoardPage() {
   const hasActiveFilters = priorityFilter.length > 0 || dateFilter !== 'all' || searchQuery !== '';
 
   const handleSmartSort = async () => {
-    if (!apiKey) {
-        toast({
-            variant: "destructive",
-            title: "API Key Required",
-            description: "Please set your Gemini API key to use AI features.",
-        });
-        return;
-    }
     setIsPrioritizing(true);
     try {
       const tasksToSort = tasks
@@ -93,7 +83,7 @@ export default function BoardPage() {
         return;
       }
       
-      const result = await prioritizeTasks({ apiKey, input: { tasks: tasksToSort }});
+      const result = await prioritizeTasks({ tasks: tasksToSort });
 
       const updates = result.prioritizedTasks.map(p => ({
         taskId: p.id,
@@ -112,7 +102,7 @@ export default function BoardPage() {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "AI Smart Sort failed. Please try again.",
+            description: "AI Smart Sort failed. Please make sure your GOOGLE_API_KEY is set correctly.",
         });
     } finally {
         setIsPrioritizing(false);
@@ -134,7 +124,7 @@ export default function BoardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleSmartSort} disabled={isPrioritizing || !isApiKeySet}>
+            <Button variant="outline" onClick={handleSmartSort} disabled={isPrioritizing}>
               {isPrioritizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
               Smart Sort
             </Button>

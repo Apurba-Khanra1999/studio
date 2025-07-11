@@ -15,7 +15,6 @@ import {
   getNotificationsLocalStorageKey,
   generateId as generateNotificationId,
 } from '@/hooks/use-notifications';
-import { ApiKeyProvider, useApiKey } from '@/hooks/use-api-key';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { KanbanSquare, LayoutDashboard, Calendar, Search, Loader2, BookOpen } from 'lucide-react';
 import { cn } from "@/lib/utils";
@@ -27,11 +26,9 @@ import type { Task, Status, Priority, Subtask, Notification } from '@/lib/types'
 import { Button } from "@/components/ui/button";
 import { CommandPalette } from "@/components/command-palette";
 import { UserNav } from "@/components/user-nav";
-import { ApiKeyDialog } from "@/components/api-key-dialog";
 
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { apiKey, isApiKeySet, isInitialized: isApiKeyInitialized } = useApiKey();
   const router = useRouter();
   const pathname = usePathname();
   const { tasks, addTask, updateTask, deleteTask } = React.useContext(TasksContext)!;
@@ -71,7 +68,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <ApiKeyDialog isOpen={isApiKeyInitialized && !isApiKeySet} />
       <CommandPalette 
         isOpen={isCommandPaletteOpen}
         setIsOpen={setIsCommandPaletteOpen}
@@ -267,11 +263,9 @@ function MainLayoutWithProviders({
   return (
     <TasksContext.Provider value={tasksContextValue}>
       <NotificationsContext.Provider value={notificationsContextValue}>
-        <ApiKeyProvider>
-            <MainLayoutContent>
+        <MainLayoutContent>
             {children}
-            </MainLayoutContent>
-        </ApiKeyProvider>
+        </MainLayoutContent>
       </NotificationsContext.Provider>
     </TasksContext.Provider>
   );

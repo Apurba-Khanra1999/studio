@@ -9,7 +9,6 @@ TaskFlow is a modern, full-featured task management application built with Next.
 
 *   **Intuitive Task Management**: A drag-and-drop Kanban board with columns for "To Do", "In Progress", and "Done".
 *   **Rich Task Details**: Tasks include titles, descriptions, priorities, due dates, subtasks, and cover images.
-*   **Bring Your Own API Key**: Users provide their own Gemini API key, which is stored securely in their browser's local storage.
 *   **AI-Powered Workflows**:
     *   **Smart Create**: Generate a complete task (description, priority, subtasks, image) from just a title.
     *   **Natural Language Processing**: Create tasks using plain English like *"Fix login bug, due tomorrow"*.
@@ -19,7 +18,7 @@ TaskFlow is a modern, full-featured task management application built with Next.
 *   **Multiple Views**: Visualize your work with a Kanban **Board**, a data-rich **Dashboard**, and a **Calendar** view.
 *   **Seamless UX**: Features like a command palette (`⌘K`), quick-add popover, notifications, and dark/light modes enhance productivity.
 *   **Secure Authentication**: User sign-up and login with email/password or Google, powered by Firebase.
-*   **Persistent & Scoped Storage**: Task data and the user's API key are saved to `localStorage` and are unique to each logged-in user.
+*   **Persistent & Scoped Storage**: Task data and notifications are saved to `localStorage` and are unique to each logged-in user.
 
 ## 🚀 Technology Stack
 
@@ -39,13 +38,17 @@ TaskFlow is a modern, full-featured task management application built with Next.
 
 *   Node.js (v18 or later)
 *   An active Firebase project
-*   A Google AI (Gemini) API Key (which you will provide in the app)
+*   A Google AI (Gemini) API Key
 
 ### 1. Configuration
 
-First, you need to set up your environment variables. Create a file named `.env` in the root of the project and add your Firebase credentials.
+First, you need to set up your environment variables. Create a file named `.env` in the root of the project and add your Firebase and Google API keys.
 
 ```env
+# Google AI API Key (for Genkit on the server-side)
+# This key is kept secret and is only used on the server.
+GOOGLE_API_KEY="YOUR_GEMINI_API_KEY_HERE"
+
 # Firebase Client-Side Keys (for authentication)
 # These are safe to be exposed on the client.
 NEXT_PUBLIC_FIREBASE_API_KEY="YOUR_FIREBASE_API_KEY"
@@ -56,8 +59,6 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="YOUR_FIREBASE_MESSAGING_SENDER_ID"
 NEXT_PUBLIC_FIREBASE_APP_ID="YOUR_FIREBASE_APP_ID"
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="YOUR_FIREBASE_MEASUREMENT_ID"
 ```
-
-**Note:** You no longer need to add a `GOOGLE_API_KEY` to this file. The application will prompt you to enter your Gemini API key after you log in.
 
 ### 2. Install Dependencies
 
@@ -81,11 +82,10 @@ The application will be available at `http://localhost:3000`.
 
 ## 🧠 Core Concepts & Features
 
-### Authentication & API Key Management
+### Authentication & Data Storage
 
-*   **Firebase Authentication**: The app supports email/password and Google Sign-In.
-*   **User-Provided API Key**: After logging in for the first time, users are prompted to enter their Google Gemini API key.
-*   **Secure Local Storage**: The API key is stored securely in the browser's `localStorage`, scoped to the logged-in user. It is never exposed in the source code or sent to any server other than Google's AI services.
+*   **Firebase Authentication**: The app supports email/password and Google Sign-In for secure user management.
+*   **User-Scoped Data**: All task and notification data is saved in your browser's `localStorage` and is tied to your unique user ID, ensuring your data is completely private and separate from other users.
 
 ### The Kanban Board (`/board`)
 

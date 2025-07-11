@@ -31,7 +31,6 @@ import { Checkbox } from './ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { generateSubtasks } from '@/ai/flows/generate-subtasks';
 import { generateTaskImage } from '@/ai/flows/generate-task-image';
-import { useApiKey } from '@/hooks/use-api-key';
 
 
 const statuses: Status[] = ["To Do", "In Progress", "Done"];
@@ -66,7 +65,6 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { apiKey, isApiKeySet } = useApiKey();
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -111,28 +109,12 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
     })
   };
 
-  const checkApiKey = () => {
-    if (!isApiKeySet) {
-        toast({
-            variant: "destructive",
-            title: "API Key Required",
-            description: "Please set your Gemini API key to use AI features.",
-        });
-        return false;
-    }
-    return true;
-  }
-
   const handleGenerateSubtasks = async () => {
-    if (!checkApiKey() || !apiKey) return;
     setIsGeneratingSubtasks(true);
     try {
       const result = await generateSubtasks({
-        apiKey,
-        input: {
-            title: form.getValues('title'),
-            description: form.getValues('description') || '',
-        }
+        title: form.getValues('title'),
+        description: form.getValues('description') || '',
       });
       const newSubtasks: Subtask[] = result.subtasks.map((text) => ({
         id: `gen-${Date.now()}-${Math.random()}`,
@@ -146,7 +128,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate subtasks.",
+        description: "Failed to generate subtasks. Please ensure your GOOGLE_API_KEY is set.",
       });
     } finally {
       setIsGeneratingSubtasks(false);
@@ -154,17 +136,16 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
   };
 
   const handleGenerateImage = async () => {
-    if (!checkApiKey() || !apiKey) return;
     setIsGeneratingImage(true);
     try {
-      const result = await generateTaskImage({ apiKey, input: { title: form.getValues('title') } });
+      const result = await generateTaskImage({ title: form.getValues('title') });
       form.setValue('imageUrl', result.imageUrl, { shouldDirty: true });
     } catch (error) {
       console.error("AI image generation failed:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate task image.",
+        description: "Failed to generate task image. Please ensure your GOOGLE_API_KEY is set.",
       });
     } finally {
       setIsGeneratingImage(false);
@@ -361,7 +342,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                     )}
                     <Tabs defaultValue="ai" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="ai" disabled={!isApiKeySet}>
+                        <TabsTrigger value="ai">
                           <Wand2 className="mr-2 h-4 w-4" />
                            Generate with AI
                         </TabsTrigger>
@@ -376,7 +357,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                           variant="outline"
                           className="w-full"
                           onClick={handleGenerateImage}
-                          disabled={anyAiLoading || !form.getValues('title') || !isApiKeySet}
+                          disabled={anyAiLoading || !form.getValues('title')}
                         >
                           {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                           {form.watch('imageUrl') ? 'Generate a new image' : 'Generate an image'}
@@ -410,7 +391,7 @@ export function TaskDetailsDialog({ isOpen, setIsOpen, task, updateTask, deleteT
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <FormLabel>Subtasks</FormLabel>
-                    <Button type="button" variant="outline" size="sm" onClick={handleGenerateSubtasks} disabled={anyAiLoading || !isApiKeySet}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleGenerateSubtasks} disabled={anyAiLoading}>
                       {isGeneratingSubtasks ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                       Suggest with AI
                     </Button>

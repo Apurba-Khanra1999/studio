@@ -16,7 +16,6 @@ import { cn } from "@/lib/utils";
 import type { Task, Priority } from '@/lib/types';
 import { generateDashboardSummary } from '@/ai/flows/generate-dashboard-summary';
 import { generateAudioSummary } from '@/ai/flows/generate-audio-summary';
-import { useApiKey } from '@/hooks/use-api-key';
 
 
 const statusChartConfig = {
@@ -77,7 +76,6 @@ const TaskListItem = ({ task }: { task: Task }) => (
 
 export default function DashboardPage() {
   const { tasks, isInitialized } = useTasks();
-  const { apiKey, isApiKeySet } = useApiKey();
   const [summary, setSummary] = React.useState("");
   const [isGeneratingSummary, setIsGeneratingSummary] = React.useState(true);
   const [summaryAudio, setSummaryAudio] = React.useState<string | null>(null);
@@ -111,7 +109,7 @@ export default function DashboardPage() {
   }, [tasks, isInitialized]);
   
   React.useEffect(() => {
-    if (stats && isApiKeySet && apiKey) {
+    if (stats) {
       setIsGeneratingSummary(true);
       setIsGeneratingAudio(true);
       setSummaryAudio(null);
@@ -123,12 +121,12 @@ export default function DashboardPage() {
         upcomingTasks: upcomingTasks.length,
       };
 
-      generateDashboardSummary({ apiKey, input: summaryInput }).then(result => {
+      generateDashboardSummary(summaryInput).then(result => {
         setSummary(result.summary);
         setIsGeneratingSummary(false);
 
         // Now generate audio
-        generateAudioSummary({ apiKey, input: { summary: result.summary } })
+        generateAudioSummary({ summary: result.summary })
           .then(audioResult => {
             setSummaryAudio(audioResult.media);
           })
@@ -140,16 +138,12 @@ export default function DashboardPage() {
           });
       }).catch(err => {
         console.error("Failed to generate summary:", err);
-        setSummary("Could not load AI insights at the moment.");
+        setSummary("Could not load AI insights. Please ensure your API key is configured correctly.");
         setIsGeneratingSummary(false);
         setIsGeneratingAudio(false);
       });
-    } else if (isApiKeySet === false) {
-        setSummary("Please set your API key to enable AI-powered insights.");
-        setIsGeneratingSummary(false);
-        setIsGeneratingAudio(false);
     }
-  }, [stats, upcomingTasks.length, apiKey, isApiKeySet]);
+  }, [stats, upcomingTasks.length]);
 
 
   const tasksByStatusData = React.useMemo(() => {
@@ -206,10 +200,10 @@ export default function DashboardPage() {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => audioRef.current?.play()}
-                disabled={isGeneratingAudio || !summaryAudio || !isApiKeySet}
+                disabled={isGeneratingAudio || !summaryAudio}
                 aria-label="Play audio summary"
               >
-                {isApiKeySet && isGeneratingAudio ? (
+                {isGeneratingAudio ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                     <Volume2 className="h-5 w-5" />
@@ -218,7 +212,7 @@ export default function DashboardPage() {
             </div>
         </CardHeader>
         <CardContent>
-          {isApiKeySet && isGeneratingSummary ? (
+          {isGeneratingSummary ? (
               <Skeleton className="h-6 w-3/4" />
           ) : (
               <p className="text-sm text-foreground">{summary}</p>

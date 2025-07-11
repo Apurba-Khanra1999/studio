@@ -1,44 +1,48 @@
-
 'use server';
 /**
  * @fileOverview Parses natural language text into a structured task object.
  *
  * - parseNaturalLanguageTask - A function that handles the parsing.
- * - ParseNaturalLanguageTaskFlowInput - The top-level input for the flow, including the API key.
+ * - ParseNaturalLanguageTaskInput - The input for the flow.
  * - ParseNaturalLanguageTaskOutput - The return type for the function.
  */
 
-import { ai as baseAi } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/googleai';
-import { genkit, z } from 'genkit';
-import { format } from 'date-fns';
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+import {format} from 'date-fns';
 
-const ParseNaturalLanguageTaskInputSchema = z.object({
+export const ParseNaturalLanguageTaskInputSchema = z.object({
   text: z.string().describe('The natural language text describing the task.'),
   currentDate: z.string().describe('The current date in YYYY-MM-DD format.'),
 });
-
-export const ParseNaturalLanguageTaskFlowInputSchema = z.object({
-    apiKey: z.string(),
-    input: z.object({ text: z.string() }),
-});
-export type ParseNaturalLanguageTaskFlowInput = z.infer<typeof ParseNaturalLanguageTaskFlowInputSchema>;
-
+export type ParseNaturalLanguageTaskInput = z.infer<
+  typeof ParseNaturalLanguageTaskInputSchema
+>;
 
 const ParseNaturalLanguageTaskOutputSchema = z.object({
   title: z.string().describe('The extracted title of the task.'),
-  description: z.string().optional().describe('A detailed description if provided.'),
-  priority: z.enum(['High', 'Medium', 'Low']).optional().describe('The extracted priority of the task.'),
-  dueDate: z.string().optional().describe("The extracted due date in 'YYYY-MM-DD' format."),
+  description: z
+    .string()
+    .optional()
+    .describe('A detailed description if provided.'),
+  priority: z
+    .enum(['High', 'Medium', 'Low'])
+    .optional()
+    .describe('The extracted priority of the task.'),
+  dueDate: z
+    .string()
+    .optional()
+    .describe("The extracted due date in 'YYYY-MM-DD' format."),
 });
-export type ParseNaturalLanguageTaskOutput = z.infer<typeof ParseNaturalLanguageTaskOutputSchema>;
+export type ParseNaturalLanguageTaskOutput = z.infer<
+  typeof ParseNaturalLanguageTaskOutputSchema
+>;
 
-
-const prompt = baseAi.definePrompt({
-    name: 'parseNaturalLanguageTaskPrompt',
-    input: {schema: ParseNaturalLanguageTaskInputSchema},
-    output: {schema: ParseNaturalLanguageTaskOutputSchema},
-    prompt: `You are an intelligent task parsing assistant. Your job is to extract structured information from a user's text input to create a task.
+const prompt = ai.definePrompt({
+  name: 'parseNaturalLanguageTaskPrompt',
+  input: {schema: ParseNaturalLanguageTaskInputSchema},
+  output: {schema: ParseNaturalLanguageTaskOutputSchema},
+  prompt: `You are an intelligent task parsing assistant. Your job is to extract structured information from a user's text input to create a task.
 
 Current Date: {{currentDate}}
 
@@ -51,28 +55,21 @@ Analyze the user's text and extract the following information:
 User Input: "{{{text}}}"`,
 });
 
-const parseNaturalLanguageTaskFlow = baseAi.defineFlow(
-    {
-        name: 'parseNaturalLanguageTaskFlow',
-        inputSchema: ParseNaturalLanguageTaskInputSchema,
-        outputSchema: ParseNaturalLanguageTaskOutputSchema,
-    },
-    async (input, streamingCallback, context) => {
-        const {output} = await context.ai.prompt(prompt, input);
-        return output!;
-    }
+const parseNaturalLanguageTaskFlow = ai.defineFlow(
+  {
+    name: 'parseNaturalLanguageTaskFlow',
+    inputSchema: ParseNaturalLanguageTaskInputSchema,
+    outputSchema: ParseNaturalLanguageTaskOutputSchema,
+  },
+  async (input) => {
+    const {output} = await prompt(input);
+    return output!;
+  }
 );
 
-
 export async function parseNaturalLanguageTask(
-  flowInput: ParseNaturalLanguageTaskFlowInput
+  input: z.infer<typeof z.object({text: z.string()})>
 ): Promise<ParseNaturalLanguageTaskOutput> {
-  const { apiKey, input } = flowInput;
   const currentDate = format(new Date(), 'yyyy-MM-dd');
-
-  const ai = genkit({
-    plugins: [googleAI({ apiKey })],
-  });
-  
-  return ai.run(parseNaturalLanguageTaskFlow, { text: input.text, currentDate });
+  return parseNaturalLanguageTaskFlow({text: input.text, currentDate});
 }

@@ -13,7 +13,6 @@ import type { Priority, Subtask } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Form, FormControl, FormField, FormItem, FormMessage } from './ui/form';
 import { parseNaturalLanguageTask } from '@/ai/flows/parse-natural-language-task';
-import { useApiKey } from '@/hooks/use-api-key';
 
 const schema = z.object({
   prompt: z.string().min(1, "Please enter a task description."),
@@ -29,7 +28,6 @@ export function QuickTaskEntry({ addTask }: QuickTaskEntryProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isParsing, setIsParsing] = React.useState(false);
   const { toast } = useToast();
-  const { apiKey, isApiKeySet } = useApiKey();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -39,17 +37,9 @@ export function QuickTaskEntry({ addTask }: QuickTaskEntryProps) {
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if (!isApiKeySet || !apiKey) {
-      toast({
-        variant: "destructive",
-        title: "API Key Required",
-        description: "Please set your Gemini API key to use AI features.",
-      });
-      return;
-    }
     setIsParsing(true);
     try {
-      const result = await parseNaturalLanguageTask({ apiKey, input: { text: data.prompt } });
+      const result = await parseNaturalLanguageTask({ text: data.prompt });
       
       const newTask = {
         title: result.title,
@@ -73,7 +63,7 @@ export function QuickTaskEntry({ addTask }: QuickTaskEntryProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Could not create task with AI. Please try again or use the manual 'Add Task' button.",
+        description: "Could not create task. Please ensure your GOOGLE_API_KEY is set correctly.",
       });
     } finally {
       setIsParsing(false);
@@ -83,7 +73,7 @@ export function QuickTaskEntry({ addTask }: QuickTaskEntryProps) {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Quick Add Task with AI" disabled={!isApiKeySet}>
+        <Button variant="outline" size="icon" aria-label="Quick Add Task with AI">
           <Sparkles className="h-4 w-4" />
         </Button>
       </PopoverTrigger>

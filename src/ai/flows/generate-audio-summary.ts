@@ -8,9 +8,9 @@
  * - GenerateAudioSummaryOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 import wav from 'wav';
 
 const GenerateAudioSummaryInputSchema = z.object({
@@ -57,13 +57,15 @@ async function toWav(
   });
 }
 
-const generateAudioSummaryFlow = ai.defineFlow(
+const generateAudioSummaryFlow = baseAi.defineFlow(
   {
     name: 'generateAudioSummaryFlow',
     inputSchema: GenerateAudioSummaryInputSchema,
     outputSchema: GenerateAudioSummaryOutputSchema,
   },
-  async ({summary}) => {
+  async ({summary}, streamingCallback, context) => {
+    const ai = context.plugins.googleai!;
+
     const { media } = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
@@ -99,7 +101,10 @@ export async function generateAudioSummary(
   flowInput: GenerateAudioSummaryFlowInput
 ): Promise<GenerateAudioSummaryOutput> {
   const { apiKey, input } = flowInput;
-  return generateAudioSummaryFlow(input, {
+  
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+
+  return ai.run(generateAudioSummaryFlow, input);
 }

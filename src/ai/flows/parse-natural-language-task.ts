@@ -8,9 +8,9 @@
  * - ParseNaturalLanguageTaskOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 import { format } from 'date-fns';
 
 const ParseNaturalLanguageTaskInputSchema = z.object({
@@ -34,7 +34,7 @@ const ParseNaturalLanguageTaskOutputSchema = z.object({
 export type ParseNaturalLanguageTaskOutput = z.infer<typeof ParseNaturalLanguageTaskOutputSchema>;
 
 
-const prompt = ai.definePrompt({
+const prompt = baseAi.definePrompt({
     name: 'parseNaturalLanguageTaskPrompt',
     input: {schema: ParseNaturalLanguageTaskInputSchema},
     output: {schema: ParseNaturalLanguageTaskOutputSchema},
@@ -51,14 +51,14 @@ Analyze the user's text and extract the following information:
 User Input: "{{{text}}}"`,
 });
 
-const parseNaturalLanguageTaskFlow = ai.defineFlow(
+const parseNaturalLanguageTaskFlow = baseAi.defineFlow(
     {
         name: 'parseNaturalLanguageTaskFlow',
         inputSchema: ParseNaturalLanguageTaskInputSchema,
         outputSchema: ParseNaturalLanguageTaskOutputSchema,
     },
-    async (input) => {
-        const {output} = await prompt(input);
+    async (input, streamingCallback, context) => {
+        const {output} = await context.ai.prompt(prompt, input);
         return output!;
     }
 );
@@ -69,8 +69,10 @@ export async function parseNaturalLanguageTask(
 ): Promise<ParseNaturalLanguageTaskOutput> {
   const { apiKey, input } = flowInput;
   const currentDate = format(new Date(), 'yyyy-MM-dd');
-  
-  return parseNaturalLanguageTaskFlow({ text: input.text, currentDate }, {
+
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+  
+  return ai.run(parseNaturalLanguageTaskFlow, { text: input.text, currentDate });
 }

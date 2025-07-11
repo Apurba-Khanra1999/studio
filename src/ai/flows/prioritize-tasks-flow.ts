@@ -8,9 +8,9 @@
  * - PrioritizeTasksOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 
 const TaskInfoSchema = z.object({
   id: z.string().describe('The unique identifier for the task.'),
@@ -39,7 +39,7 @@ const PrioritizeTasksOutputSchema = z.object({
 });
 export type PrioritizeTasksOutput = z.infer<typeof PrioritizeTasksOutputSchema>;
 
-const prompt = ai.definePrompt({
+const prompt = baseAi.definePrompt({
     name: 'prioritizeTasksPrompt',
     input: {schema: PrioritizeTasksInputSchema},
     output: {schema: PrioritizeTasksOutputSchema},
@@ -58,18 +58,18 @@ Tasks to prioritize:
   });
 
 
-const prioritizeTasksFlow = ai.defineFlow(
+const prioritizeTasksFlow = baseAi.defineFlow(
     {
         name: 'prioritizeTasksFlow',
         inputSchema: PrioritizeTasksInputSchema,
         outputSchema: PrioritizeTasksOutputSchema,
     },
-    async (input) => {
+    async (input, streamingCallback, context) => {
         if (input.tasks.length === 0) {
             return { prioritizedTasks: [] };
         }
         
-        const {output} = await prompt(input);
+        const {output} = await context.ai.prompt(prompt, input);
         return output!;
     }
 );
@@ -78,7 +78,9 @@ const prioritizeTasksFlow = ai.defineFlow(
 export async function prioritizeTasks(flowInput: PrioritizeTasksFlowInput): Promise<PrioritizeTasksOutput> {
   const { apiKey, input } = flowInput;
   
-  return prioritizeTasksFlow(input, {
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+
+  return ai.run(prioritizeTasksFlow, input);
 }

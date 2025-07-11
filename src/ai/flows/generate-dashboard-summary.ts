@@ -9,9 +9,9 @@
  * - GenerateDashboardSummaryOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 
 const GenerateDashboardSummaryInputSchema = z.object({
   totalTasks: z.number().describe('The total number of tasks.'),
@@ -32,7 +32,7 @@ const GenerateDashboardSummaryOutputSchema = z.object({
 });
 export type GenerateDashboardSummaryOutput = z.infer<typeof GenerateDashboardSummaryOutputSchema>;
 
-const prompt = ai.definePrompt({
+const prompt = baseAi.definePrompt({
     name: 'generateDashboardSummaryPrompt',
     input: {schema: GenerateDashboardSummaryInputSchema},
     output: {schema: GenerateDashboardSummaryOutputSchema},
@@ -51,19 +51,19 @@ Example: "You're making great progress with {{{completedTasks}}} tasks done! You
 `,
   });
 
-const generateDashboardSummaryFlow = ai.defineFlow(
+const generateDashboardSummaryFlow = baseAi.defineFlow(
     {
         name: 'generateDashboardSummaryFlow',
         inputSchema: GenerateDashboardSummaryInputSchema,
         outputSchema: GenerateDashboardSummaryOutputSchema,
     },
-    async (input) => {
+    async (input, streamingCallback, context) => {
         // If there are no tasks, return a default message without calling the AI.
         if (input.totalTasks === 0) {
             return { summary: "No tasks yet! Add a new task to get started and see your progress here." };
         }
 
-        const {output} = await prompt(input);
+        const {output} = await context.ai.prompt(prompt, input);
         return output!;
     }
 );
@@ -74,7 +74,9 @@ export async function generateDashboardSummary(
 ): Promise<GenerateDashboardSummaryOutput> {
   const { apiKey, input } = flowInput;
   
-  return generateDashboardSummaryFlow(input, {
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+
+  return ai.run(generateDashboardSummaryFlow, input);
 }

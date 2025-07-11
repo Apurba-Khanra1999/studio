@@ -8,9 +8,9 @@
  * - GenerateTaskDescriptionOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 
 const GenerateTaskDescriptionInputSchema = z.object({
   title: z.string().describe('The title of the task.'),
@@ -29,7 +29,7 @@ const GenerateTaskDescriptionOutputSchema = z.object({
 export type GenerateTaskDescriptionOutput = z.infer<typeof GenerateTaskDescriptionOutputSchema>;
 
 
-const prompt = ai.definePrompt({
+const prompt = baseAi.definePrompt({
     name: 'generateTaskDescriptionPrompt',
     input: {schema: GenerateTaskDescriptionInputSchema},
     output: {schema: GenerateTaskDescriptionOutputSchema},
@@ -40,14 +40,14 @@ const prompt = ai.definePrompt({
     `,
 });
 
-const generateTaskDescriptionFlow = ai.defineFlow(
+const generateTaskDescriptionFlow = baseAi.defineFlow(
     {
         name: 'generateTaskDescriptionFlow',
         inputSchema: GenerateTaskDescriptionInputSchema,
         outputSchema: GenerateTaskDescriptionOutputSchema,
     },
-    async ({ title }) => {
-        const {output} = await prompt({title});
+    async ({ title }, streamingCallback, context) => {
+        const {output} = await context.ai.prompt(prompt, {title});
         return output!;
     }
 );
@@ -57,7 +57,9 @@ export async function generateTaskDescription(
 ): Promise<GenerateTaskDescriptionOutput> {
   const { apiKey, input } = flowInput;
   
-  return generateTaskDescriptionFlow(input, {
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+  
+  return ai.run(generateTaskDescriptionFlow, input);
 }

@@ -8,9 +8,9 @@
  * - GenerateFullTaskFromTitleOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 
 // Schema for the text-based details of the task.
 const TaskDetailsSchema = z.object({
@@ -37,7 +37,7 @@ const GenerateFullTaskFromTitleOutputSchema = TaskDetailsSchema.extend({
 export type GenerateFullTaskFromTitleOutput = z.infer<typeof GenerateFullTaskFromTitleOutputSchema>;
 
 // Prompt to generate the description, priority, and subtasks.
-const textDetailsPrompt = ai.definePrompt({
+const textDetailsPrompt = baseAi.definePrompt({
     name: 'generateTaskDetailsPrompt',
     input: {schema: GenerateFullTaskFromTitleInputSchema},
     output: {schema: TaskDetailsSchema},
@@ -48,15 +48,17 @@ const textDetailsPrompt = ai.definePrompt({
     `,
 });
 
-const generateFullTaskFromTitleFlow = ai.defineFlow(
+const generateFullTaskFromTitleFlow = baseAi.defineFlow(
     {
         name: 'generateFullTaskFromTitleFlow',
         inputSchema: GenerateFullTaskFromTitleInputSchema,
         outputSchema: GenerateFullTaskFromTitleOutputSchema,
     },
-    async ({ title }) => {
+    async ({ title }, streamingCallback, context) => {
+        const ai = context.plugins.googleai!;
+        
         // Step 1: Start generating text details (description, priority, subtasks).
-        const textDetailsPromise = textDetailsPrompt({ title });
+        const textDetailsPromise = ai.prompt(textDetailsPrompt, { title });
 
         // Step 2: Start generating the image in parallel.
         const imagePromise = ai.generate({
@@ -91,7 +93,9 @@ const generateFullTaskFromTitleFlow = ai.defineFlow(
 export async function generateFullTaskFromTitle(flowInput: GenerateFullTaskFromTitleFlowInput): Promise<GenerateFullTaskFromTitleOutput> {
   const { apiKey, input } = flowInput;
   
-  return generateFullTaskFromTitleFlow(input, {
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+
+  return ai.run(generateFullTaskFromTitleFlow, input);
 }

@@ -9,9 +9,9 @@
  * - GenerateSubtasksOutput - The return type for the generateSubtasks function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 
 const GenerateSubtasksInputSchema = z.object({
   title: z.string().describe('The title of the main task.'),
@@ -30,7 +30,7 @@ const GenerateSubtasksOutputSchema = z.object({
 });
 export type GenerateSubtasksOutput = z.infer<typeof GenerateSubtasksOutputSchema>;
 
-const prompt = ai.definePrompt({
+const prompt = baseAi.definePrompt({
     name: 'generateSubtasksPrompt',
     input: {schema: GenerateSubtasksInputSchema},
     output: {schema: GenerateSubtasksOutputSchema},
@@ -42,14 +42,14 @@ const prompt = ai.definePrompt({
     Generate a list of subtasks. If the description is brief, create general subtasks appropriate for the title.`,
 });
 
-const generateSubtasksFlow = ai.defineFlow(
+const generateSubtasksFlow = baseAi.defineFlow(
     {
         name: 'generateSubtasksFlow',
         inputSchema: GenerateSubtasksInputSchema,
         outputSchema: GenerateSubtasksOutputSchema,
     },
-    async (input) => {
-        const {output} = await prompt(input);
+    async (input, streamingCallback, context) => {
+        const {output} = await context.ai.prompt(prompt, input);
         return output!;
     }
 );
@@ -60,7 +60,9 @@ export async function generateSubtasks(
 ): Promise<GenerateSubtasksOutput> {
   const { apiKey, input } = flowInput;
 
-  return generateSubtasksFlow(input, {
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+
+  return ai.run(generateSubtasksFlow, input);
 }

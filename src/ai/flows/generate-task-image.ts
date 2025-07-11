@@ -8,9 +8,9 @@
  * - GenerateTaskImageOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai as baseAi } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
+import { genkit, z } from 'genkit';
 
 const GenerateTaskImageInputSchema = z.object({
   title: z.string().describe('The title of the task.'),
@@ -28,13 +28,15 @@ const GenerateTaskImageOutputSchema = z.object({
 });
 export type GenerateTaskImageOutput = z.infer<typeof GenerateTaskImageOutputSchema>;
 
-const generateTaskImageFlow = ai.defineFlow(
+const generateTaskImageFlow = baseAi.defineFlow(
     {
         name: 'generateTaskImageFlow',
         inputSchema: GenerateTaskImageInputSchema,
         outputSchema: GenerateTaskImageOutputSchema,
     },
-    async ({ title }) => {
+    async ({ title }, streamingCallback, context) => {
+        const ai = context.plugins.googleai!;
+        
         const { media } = await ai.generate({
             model: 'googleai/gemini-2.0-flash-preview-image-generation',
             prompt: `Generate a clean, modern, and professional image that visually represents the following task: "${title}". The image should be suitable for a project management application. Avoid text and logos.`,
@@ -57,7 +59,9 @@ const generateTaskImageFlow = ai.defineFlow(
 export async function generateTaskImage(flowInput: GenerateTaskImageFlowInput): Promise<GenerateTaskImageOutput> {
   const { apiKey, input } = flowInput;
   
-  return generateTaskImageFlow(input, {
+  const ai = genkit({
     plugins: [googleAI({ apiKey })],
   });
+
+  return ai.run(generateTaskImageFlow, input);
 }

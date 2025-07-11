@@ -41,7 +41,6 @@ export type PrioritizeTasksOutput = z.infer<typeof PrioritizeTasksOutputSchema>;
 
 const prompt = ai.definePrompt({
     name: 'prioritizeTasksPrompt',
-    model: 'googleai/gemini-2.0-flash',
     input: {schema: PrioritizeTasksInputSchema},
     output: {schema: PrioritizeTasksOutputSchema},
     prompt: `You are an expert project manager. Your goal is to intelligently prioritize a list of tasks.
@@ -81,5 +80,8 @@ export async function prioritizeTasks(flowInput: PrioritizeTasksFlowInput): Prom
   
   return prioritizeTasksFlow(input, {
     plugins: [googleAI({ apiKey })],
+    models: [{
+        model: 'gemini-2.0-flash',
+    }]
   });
 }

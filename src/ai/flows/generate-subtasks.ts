@@ -32,7 +32,6 @@ export type GenerateSubtasksOutput = z.infer<typeof GenerateSubtasksOutputSchema
 
 const prompt = ai.definePrompt({
     name: 'generateSubtasksPrompt',
-    model: 'googleai/gemini-2.0-flash',
     input: {schema: GenerateSubtasksInputSchema},
     output: {schema: GenerateSubtasksOutputSchema},
     prompt: `You are an expert project manager. Based on the task title and description, break it down into a list of smaller, actionable subtasks. Each subtask should be a short phrase.
@@ -63,5 +62,8 @@ export async function generateSubtasks(
 
   return generateSubtasksFlow(input, {
     plugins: [googleAI({ apiKey })],
+    models: [{
+        model: 'gemini-2.0-flash',
+    }]
   });
 }

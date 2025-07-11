@@ -31,7 +31,6 @@ export type GenerateTaskDescriptionOutput = z.infer<typeof GenerateTaskDescripti
 
 const prompt = ai.definePrompt({
     name: 'generateTaskDescriptionPrompt',
-    model: 'googleai/gemini-2.0-flash',
     input: {schema: GenerateTaskDescriptionInputSchema},
     output: {schema: GenerateTaskDescriptionOutputSchema},
     prompt: `You are an expert project manager. Your goal is to take a task title and write a detailed, helpful description for it.
@@ -60,5 +59,8 @@ export async function generateTaskDescription(
   
   return generateTaskDescriptionFlow(input, {
     plugins: [googleAI({ apiKey })],
+    models: [{
+        model: 'gemini-2.0-flash',
+    }]
   });
 }

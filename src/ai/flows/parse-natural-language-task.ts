@@ -36,7 +36,6 @@ export type ParseNaturalLanguageTaskOutput = z.infer<typeof ParseNaturalLanguage
 
 const prompt = ai.definePrompt({
     name: 'parseNaturalLanguageTaskPrompt',
-    model: 'googleai/gemini-2.0-flash',
     input: {schema: ParseNaturalLanguageTaskInputSchema},
     output: {schema: ParseNaturalLanguageTaskOutputSchema},
     prompt: `You are an intelligent task parsing assistant. Your job is to extract structured information from a user's text input to create a task.
@@ -73,5 +72,8 @@ export async function parseNaturalLanguageTask(
   
   return parseNaturalLanguageTaskFlow({ text: input.text, currentDate }, {
     plugins: [googleAI({ apiKey })],
+    models: [{
+        model: 'gemini-2.0-flash',
+    }]
   });
 }

@@ -39,7 +39,6 @@ export type GenerateFullTaskFromTitleOutput = z.infer<typeof GenerateFullTaskFro
 // Prompt to generate the description, priority, and subtasks.
 const textDetailsPrompt = ai.definePrompt({
     name: 'generateTaskDetailsPrompt',
-    model: 'googleai/gemini-2.0-flash',
     input: {schema: GenerateFullTaskFromTitleInputSchema},
     output: {schema: TaskDetailsSchema},
     prompt: `You are an expert project manager. Your goal is to take a simple task title and flesh it out into a detailed, actionable task.
@@ -94,5 +93,8 @@ export async function generateFullTaskFromTitle(flowInput: GenerateFullTaskFromT
   
   return generateFullTaskFromTitleFlow(input, {
     plugins: [googleAI({ apiKey })],
+    models: [{
+        model: 'gemini-2.0-flash',
+    }]
   });
 }

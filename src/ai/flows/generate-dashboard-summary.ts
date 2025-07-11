@@ -34,7 +34,6 @@ export type GenerateDashboardSummaryOutput = z.infer<typeof GenerateDashboardSum
 
 const prompt = ai.definePrompt({
     name: 'generateDashboardSummaryPrompt',
-    model: 'googleai/gemini-2.0-flash',
     input: {schema: GenerateDashboardSummaryInputSchema},
     output: {schema: GenerateDashboardSummaryOutputSchema},
     prompt: `You are a friendly and encouraging productivity assistant. Based on the following task statistics, write a short, insightful, and motivational summary for the user.
@@ -77,5 +76,8 @@ export async function generateDashboardSummary(
   
   return generateDashboardSummaryFlow(input, {
     plugins: [googleAI({ apiKey })],
+    models: [{
+        model: 'gemini-2.0-flash',
+    }]
   });
 }

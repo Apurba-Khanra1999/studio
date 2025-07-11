@@ -8,7 +8,8 @@
  * - GenerateTaskImageOutput - The return type for the function.
  */
 
-import { configureGenkit } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 
 const GenerateTaskImageInputSchema = z.object({
@@ -27,25 +28,36 @@ const GenerateTaskImageOutputSchema = z.object({
 });
 export type GenerateTaskImageOutput = z.infer<typeof GenerateTaskImageOutputSchema>;
 
+const generateTaskImageFlow = ai.defineFlow(
+    {
+        name: 'generateTaskImageFlow',
+        inputSchema: GenerateTaskImageInputSchema,
+        outputSchema: GenerateTaskImageOutputSchema,
+    },
+    async ({ title }) => {
+        const { media } = await ai.generate({
+            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+            prompt: `Generate a clean, modern, and professional image that visually represents the following task: "${title}". The image should be suitable for a project management application. Avoid text and logos.`,
+            config: {
+              responseModalities: ['TEXT', 'IMAGE'],
+            },
+        });
+        
+        if (!media) {
+          throw new Error('No image was generated.');
+        }
+    
+        return {
+            imageUrl: media.url,
+        };
+    }
+);
+
 
 export async function generateTaskImage(flowInput: GenerateTaskImageFlowInput): Promise<GenerateTaskImageOutput> {
   const { apiKey, input } = flowInput;
-  const { title } = input;
-  const ai = configureGenkit(apiKey);
-
-    const { media } = await ai.generate({
-        model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: `Generate a clean, modern, and professional image that visually represents the following task: "${title}". The image should be suitable for a project management application. Avoid text and logos.`,
-        config: {
-          responseModalities: ['TEXT', 'IMAGE'],
-        },
-    });
-    
-    if (!media) {
-      throw new Error('No image was generated.');
-    }
-
-    return {
-        imageUrl: media.url,
-    };
+  
+  return generateTaskImageFlow(input, {
+    plugins: [googleAI({ apiKey })],
+  });
 }

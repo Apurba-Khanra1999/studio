@@ -8,7 +8,8 @@
  * - GenerateFullTaskFromTitleOutput - The return type for the function.
  */
 
-import { configureGenkit } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 
 // Schema for the text-based details of the task.
@@ -35,14 +36,8 @@ const GenerateFullTaskFromTitleOutputSchema = TaskDetailsSchema.extend({
 });
 export type GenerateFullTaskFromTitleOutput = z.infer<typeof GenerateFullTaskFromTitleOutputSchema>;
 
-
-export async function generateFullTaskFromTitle(flowInput: GenerateFullTaskFromTitleFlowInput): Promise<GenerateFullTaskFromTitleOutput> {
-  const { apiKey, input } = flowInput;
-  const { title } = input;
-  const ai = configureGenkit(apiKey);
-
-  // Prompt to generate the description, priority, and subtasks.
-  const textDetailsPrompt = ai.definePrompt({
+// Prompt to generate the description, priority, and subtasks.
+const textDetailsPrompt = ai.definePrompt({
     name: 'generateTaskDetailsPrompt',
     model: 'googleai/gemini-2.0-flash',
     input: {schema: GenerateFullTaskFromTitleInputSchema},
@@ -52,35 +47,52 @@ export async function generateFullTaskFromTitle(flowInput: GenerateFullTaskFromT
 
     Task Title: {{{title}}}
     `,
-  });
+});
 
-  // Step 1: Start generating text details (description, priority, subtasks).
-  const textDetailsPromise = textDetailsPrompt({ title });
+const generateFullTaskFromTitleFlow = ai.defineFlow(
+    {
+        name: 'generateFullTaskFromTitleFlow',
+        inputSchema: GenerateFullTaskFromTitleInputSchema,
+        outputSchema: GenerateFullTaskFromTitleOutputSchema,
+    },
+    async ({ title }) => {
+        // Step 1: Start generating text details (description, priority, subtasks).
+        const textDetailsPromise = textDetailsPrompt({ title });
 
-  // Step 2: Start generating the image in parallel.
-  const imagePromise = ai.generate({
-      model: 'googleai/gemini-2.0-flash-preview-image-generation',
-      prompt: `Generate a clean, modern, and professional image that visually represents the following task: "${title}". The image should be suitable for a project management application. Avoid text and logos.`,
-      config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-      },
-  });
+        // Step 2: Start generating the image in parallel.
+        const imagePromise = ai.generate({
+            model: 'googleai/gemini-2.0-flash-preview-image-generation',
+            prompt: `Generate a clean, modern, and professional image that visually represents the following task: "${title}". The image should be suitable for a project management application. Avoid text and logos.`,
+            config: {
+                responseModalities: ['TEXT', 'IMAGE'],
+            },
+        });
 
-  // Await both promises to complete.
-  const [{ output: textOutput }, { media }] = await Promise.all([textDetailsPromise, imagePromise]);
+        // Await both promises to complete.
+        const [{ output: textOutput }, { media }] = await Promise.all([textDetailsPromise, imagePromise]);
+        
+        if (!textOutput) {
+            throw new Error('Failed to generate task details.');
+        }
+        if (!media) {
+            throw new Error('No image was generated.');
+        }
+
+        // Combine the results into a single object.
+        return {
+            description: textOutput.description,
+            priority: textOutput.priority,
+            subtasks: textOutput.subtasks,
+            imageUrl: media.url,
+        };
+    }
+);
+
+
+export async function generateFullTaskFromTitle(flowInput: GenerateFullTaskFromTitleFlowInput): Promise<GenerateFullTaskFromTitleOutput> {
+  const { apiKey, input } = flowInput;
   
-  if (!textOutput) {
-      throw new Error('Failed to generate task details.');
-  }
-  if (!media) {
-    throw new Error('No image was generated.');
-  }
-
-  // Combine the results into a single object.
-  return {
-      description: textOutput.description,
-      priority: textOutput.priority,
-      subtasks: textOutput.subtasks,
-      imageUrl: media.url,
-  };
+  return generateFullTaskFromTitleFlow(input, {
+    plugins: [googleAI({ apiKey })],
+  });
 }

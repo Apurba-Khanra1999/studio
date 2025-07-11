@@ -9,7 +9,8 @@
  * - GenerateDashboardSummaryOutput - The return type for the function.
  */
 
-import { configureGenkit } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 
 const GenerateDashboardSummaryInputSchema = z.object({
@@ -31,18 +32,7 @@ const GenerateDashboardSummaryOutputSchema = z.object({
 });
 export type GenerateDashboardSummaryOutput = z.infer<typeof GenerateDashboardSummaryOutputSchema>;
 
-export async function generateDashboardSummary(
-  flowInput: GenerateDashboardSummaryFlowInput
-): Promise<GenerateDashboardSummaryOutput> {
-  const { apiKey, input } = flowInput;
-  const ai = configureGenkit(apiKey);
-
-  // If there are no tasks, return a default message without calling the AI.
-  if (input.totalTasks === 0) {
-    return { summary: "No tasks yet! Add a new task to get started and see your progress here." };
-  }
-
-  const prompt = ai.definePrompt({
+const prompt = ai.definePrompt({
     name: 'generateDashboardSummaryPrompt',
     model: 'googleai/gemini-2.0-flash',
     input: {schema: GenerateDashboardSummaryInputSchema},
@@ -62,6 +52,30 @@ Example: "You're making great progress with {{{completedTasks}}} tasks done! You
 `,
   });
 
-  const {output} = await prompt(input);
-  return output!;
+const generateDashboardSummaryFlow = ai.defineFlow(
+    {
+        name: 'generateDashboardSummaryFlow',
+        inputSchema: GenerateDashboardSummaryInputSchema,
+        outputSchema: GenerateDashboardSummaryOutputSchema,
+    },
+    async (input) => {
+        // If there are no tasks, return a default message without calling the AI.
+        if (input.totalTasks === 0) {
+            return { summary: "No tasks yet! Add a new task to get started and see your progress here." };
+        }
+
+        const {output} = await prompt(input);
+        return output!;
+    }
+);
+
+
+export async function generateDashboardSummary(
+  flowInput: GenerateDashboardSummaryFlowInput
+): Promise<GenerateDashboardSummaryOutput> {
+  const { apiKey, input } = flowInput;
+  
+  return generateDashboardSummaryFlow(input, {
+    plugins: [googleAI({ apiKey })],
+  });
 }

@@ -8,17 +8,19 @@
  * - ParseNaturalLanguageTaskOutput - The return type for the function.
  */
 
-import { configureGenkit } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import { format } from 'date-fns';
 
 const ParseNaturalLanguageTaskInputSchema = z.object({
   text: z.string().describe('The natural language text describing the task.'),
+  currentDate: z.string().describe('The current date in YYYY-MM-DD format.'),
 });
 
 export const ParseNaturalLanguageTaskFlowInputSchema = z.object({
     apiKey: z.string(),
-    input: ParseNaturalLanguageTaskInputSchema,
+    input: z.object({ text: z.string() }),
 });
 export type ParseNaturalLanguageTaskFlowInput = z.infer<typeof ParseNaturalLanguageTaskFlowInputSchema>;
 
@@ -31,22 +33,11 @@ const ParseNaturalLanguageTaskOutputSchema = z.object({
 });
 export type ParseNaturalLanguageTaskOutput = z.infer<typeof ParseNaturalLanguageTaskOutputSchema>;
 
-export async function parseNaturalLanguageTask(
-  flowInput: ParseNaturalLanguageTaskFlowInput
-): Promise<ParseNaturalLanguageTaskOutput> {
-  const { apiKey, input } = flowInput;
-  const { text } = input;
-  const ai = configureGenkit(apiKey);
-  
-  const currentDate = format(new Date(), 'yyyy-MM-dd');
 
-  const prompt = ai.definePrompt({
+const prompt = ai.definePrompt({
     name: 'parseNaturalLanguageTaskPrompt',
     model: 'googleai/gemini-2.0-flash',
-    input: {schema: z.object({
-      text: z.string(),
-      currentDate: z.string()
-    })},
+    input: {schema: ParseNaturalLanguageTaskInputSchema},
     output: {schema: ParseNaturalLanguageTaskOutputSchema},
     prompt: `You are an intelligent task parsing assistant. Your job is to extract structured information from a user's text input to create a task.
 
@@ -59,8 +50,28 @@ Analyze the user's text and extract the following information:
 - The due date. If relative dates like "tomorrow", "next Friday", or "in 2 weeks" are used, convert them to a specific 'YYYY-MM-DD' format based on the current date.
 
 User Input: "{{{text}}}"`,
-  });
+});
 
-  const {output} = await prompt({text, currentDate});
-  return output!;
+const parseNaturalLanguageTaskFlow = ai.defineFlow(
+    {
+        name: 'parseNaturalLanguageTaskFlow',
+        inputSchema: ParseNaturalLanguageTaskInputSchema,
+        outputSchema: ParseNaturalLanguageTaskOutputSchema,
+    },
+    async (input) => {
+        const {output} = await prompt(input);
+        return output!;
+    }
+);
+
+
+export async function parseNaturalLanguageTask(
+  flowInput: ParseNaturalLanguageTaskFlowInput
+): Promise<ParseNaturalLanguageTaskOutput> {
+  const { apiKey, input } = flowInput;
+  const currentDate = format(new Date(), 'yyyy-MM-dd');
+  
+  return parseNaturalLanguageTaskFlow({ text: input.text, currentDate }, {
+    plugins: [googleAI({ apiKey })],
+  });
 }

@@ -1,24 +1,15 @@
 
-import { genkit, Genkit } from 'genkit';
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
 // This is a global AI instance for cases where no API key is needed
 // or for flows that do not need to be initialized with one.
+// We provide a mock key so that the prompts and flows can be defined
+// without requiring a key at server startup.
 export const ai = genkit({
   plugins: [
     googleAI({
-      apiKey: process.env.GOOGLE_API_KEY || 'mock-key-for-initialization',
+      apiKey: 'mock-api-key',
     }),
   ],
 });
-
-
-// This function creates a new, configured Genkit instance on-demand with a specific API key.
-// It is used by each flow to ensure that the user-specific key is used for every AI call.
-export function configureGenkit(apiKey: string): Genkit {
-    return genkit({
-        plugins: [
-            googleAI({ apiKey }),
-        ],
-    });
-}

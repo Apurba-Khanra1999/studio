@@ -8,7 +8,7 @@
  * - GenerateAudioSummaryOutput - The return type for the function.
  */
 
-import { configureGenkit } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'genkit';
 import wav from 'wav';
@@ -29,14 +29,6 @@ const GenerateAudioSummaryOutputSchema = z.object({
 });
 export type GenerateAudioSummaryOutput = z.infer<typeof GenerateAudioSummaryOutputSchema>;
 
-export async function generateAudioSummary(
-  flowInput: GenerateAudioSummaryFlowInput
-): Promise<GenerateAudioSummaryOutput> {
-  const { apiKey, input } = flowInput;
-  const ai = configureGenkit(apiKey);
-
-  return generateAudioSummaryFlow(ai, input);
-}
 
 async function toWav(
   pcmData: Buffer,
@@ -65,10 +57,13 @@ async function toWav(
   });
 }
 
-const generateAudioSummaryFlow = async (
-  ai: ReturnType<typeof configureGenkit>,
-  {summary}: z.infer<typeof GenerateAudioSummaryInputSchema>
-): Promise<GenerateAudioSummaryOutput> => {
+const generateAudioSummaryFlow = ai.defineFlow(
+  {
+    name: 'generateAudioSummaryFlow',
+    inputSchema: GenerateAudioSummaryInputSchema,
+    outputSchema: GenerateAudioSummaryOutputSchema,
+  },
+  async ({summary}) => {
     const { media } = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
@@ -96,4 +91,15 @@ const generateAudioSummaryFlow = async (
     return {
       media: 'data:audio/wav;base64,' + wavBase64,
     };
+  }
+);
+
+
+export async function generateAudioSummary(
+  flowInput: GenerateAudioSummaryFlowInput
+): Promise<GenerateAudioSummaryOutput> {
+  const { apiKey, input } = flowInput;
+  return generateAudioSummaryFlow(input, {
+    plugins: [googleAI({ apiKey })],
+  });
 }

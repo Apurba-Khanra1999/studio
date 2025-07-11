@@ -1,19 +1,26 @@
+
 'use server';
 /**
  * @fileOverview Generates an image for a task based on its title.
  *
  * - generateTaskImage - A function that generates an image for a task.
- * - GenerateTaskImageInput - The input type for the function.
+ * - GenerateTaskImageFlowInput - The top-level input for the flow, including the API key.
  * - GenerateTaskImageOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { configureGenkit } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const GenerateTaskImageInputSchema = z.object({
   title: z.string().describe('The title of the task.'),
 });
-export type GenerateTaskImageInput = z.infer<typeof GenerateTaskImageInputSchema>;
+
+export const GenerateTaskImageFlowInputSchema = z.object({
+    apiKey: z.string(),
+    input: GenerateTaskImageInputSchema,
+});
+export type GenerateTaskImageFlowInput = z.infer<typeof GenerateTaskImageFlowInputSchema>;
+
 
 const GenerateTaskImageOutputSchema = z.object({
     imageUrl: z.string().describe("The generated image as a data URI. Expected format: 'data:image/png;base64,<encoded_data>'."),
@@ -21,17 +28,11 @@ const GenerateTaskImageOutputSchema = z.object({
 export type GenerateTaskImageOutput = z.infer<typeof GenerateTaskImageOutputSchema>;
 
 
-export async function generateTaskImage(input: GenerateTaskImageInput): Promise<GenerateTaskImageOutput> {
-  return generateTaskImageFlow(input);
-}
+export async function generateTaskImage(flowInput: GenerateTaskImageFlowInput): Promise<GenerateTaskImageOutput> {
+  const { apiKey, input } = flowInput;
+  const { title } = input;
+  const ai = configureGenkit(apiKey);
 
-const generateTaskImageFlow = ai.defineFlow(
-  {
-    name: 'generateTaskImageFlow',
-    inputSchema: GenerateTaskImageInputSchema,
-    outputSchema: GenerateTaskImageOutputSchema,
-  },
-  async ({title}) => {
     const { media } = await ai.generate({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
         prompt: `Generate a clean, modern, and professional image that visually represents the following task: "${title}". The image should be suitable for a project management application. Avoid text and logos.`,
@@ -47,5 +48,4 @@ const generateTaskImageFlow = ai.defineFlow(
     return {
         imageUrl: media.url,
     };
-  }
-);
+}

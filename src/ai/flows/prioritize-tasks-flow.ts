@@ -1,14 +1,15 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to re-prioritize a list of tasks.
  *
  * - prioritizeTasks - A function that analyzes tasks and assigns new priorities.
- * - PrioritizeTasksInput - The input type for the function.
+ * - PrioritizeTasksFlowInput - The top-level input for the flow, including the API key.
  * - PrioritizeTasksOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { configureGenkit } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const TaskInfoSchema = z.object({
   id: z.string().describe('The unique identifier for the task.'),
@@ -19,7 +20,12 @@ const TaskInfoSchema = z.object({
 const PrioritizeTasksInputSchema = z.object({
   tasks: z.array(TaskInfoSchema).describe('The list of tasks to be prioritized.'),
 });
-export type PrioritizeTasksInput = z.infer<typeof PrioritizeTasksInputSchema>;
+
+export const PrioritizeTasksFlowInputSchema = z.object({
+    apiKey: z.string(),
+    input: PrioritizeTasksInputSchema,
+});
+export type PrioritizeTasksFlowInput = z.infer<typeof PrioritizeTasksFlowInputSchema>;
 
 
 const PrioritizedTaskSchema = z.object({
@@ -33,17 +39,21 @@ const PrioritizeTasksOutputSchema = z.object({
 export type PrioritizeTasksOutput = z.infer<typeof PrioritizeTasksOutputSchema>;
 
 
-export async function prioritizeTasks(input: PrioritizeTasksInput): Promise<PrioritizeTasksOutput> {
-  return prioritizeTasksFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'prioritizeTasksPrompt',
-  model: 'googleai/gemini-2.0-flash',
-  input: {schema: PrioritizeTasksInputSchema},
-  output: {schema: PrioritizeTasksOutputSchema},
-  prompt: `You are an expert project manager. Your goal is to intelligently prioritize a list of tasks.
+export async function prioritizeTasks(flowInput: PrioritizeTasksFlowInput): Promise<PrioritizeTasksOutput> {
+  const { apiKey, input } = flowInput;
+  const ai = configureGenkit(apiKey);
   
+  if (input.tasks.length === 0) {
+    return { prioritizedTasks: [] };
+  }
+  
+  const prompt = ai.definePrompt({
+    name: 'prioritizeTasksPrompt',
+    model: 'googleai/gemini-2.0-flash',
+    input: {schema: PrioritizeTasksInputSchema},
+    output: {schema: PrioritizeTasksOutputSchema},
+    prompt: `You are an expert project manager. Your goal is to intelligently prioritize a list of tasks.
+    
 Analyze the provided list of tasks, paying close attention to keywords in the title and description that imply urgency or importance (e.g., "bug", "urgent", "critical", "ASAP" vs. "plan", "research", "later").
 
 Based on your analysis, assign a priority (High, Medium, or Low) to each task.
@@ -54,19 +64,8 @@ Tasks to prioritize:
 - ID: {{id}}, Title: "{{title}}", Description: "{{description}}"
 {{/each}}
 `,
-});
+  });
 
-const prioritizeTasksFlow = ai.defineFlow(
-  {
-    name: 'prioritizeTasksFlow',
-    inputSchema: PrioritizeTasksInputSchema,
-    outputSchema: PrioritizeTasksOutputSchema,
-  },
-  async input => {
-    if (input.tasks.length === 0) {
-      return { prioritizedTasks: [] };
-    }
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const {output} = await prompt(input);
+  return output!;
+}

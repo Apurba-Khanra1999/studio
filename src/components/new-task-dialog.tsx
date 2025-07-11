@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef } from 'react';
@@ -28,6 +29,7 @@ import { format } from 'date-fns';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useApiKey } from '@/hooks/use-api-key';
 
 import { generateSubtasks } from '@/ai/flows/generate-subtasks';
 import { generateFullTaskFromTitle } from '@/ai/flows/generate-full-task-from-title';
@@ -63,6 +65,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { apiKey, isApiKeySet } = useApiKey();
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -75,7 +78,20 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     },
   });
 
+  const checkApiKey = () => {
+    if (!isApiKeySet) {
+        toast({
+            variant: "destructive",
+            title: "API Key Required",
+            description: "Please set your Gemini API key to use AI features.",
+        });
+        return false;
+    }
+    return true;
+  }
+
   const handleSmartCreate = async () => {
+    if (!checkApiKey() || !apiKey) return;
     const title = form.getValues("title");
     if (!title) {
       form.setError("title", { message: "Please enter a title to use Smart Create." });
@@ -83,7 +99,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     }
     setIsSmartCreating(true);
     try {
-        const result = await generateFullTaskFromTitle({ title });
+        const result = await generateFullTaskFromTitle({ apiKey, input: { title } });
         form.setValue("description", result.description, { shouldDirty: true });
         form.setValue("priority", result.priority, { shouldDirty: true });
         form.setValue("imageUrl", result.imageUrl, { shouldDirty: true });
@@ -110,6 +126,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
   };
   
   const handleGenerateDescription = async () => {
+    if (!checkApiKey() || !apiKey) return;
     const title = form.getValues("title");
     if (!title) {
       form.setError("title", { message: "Please enter a title first." });
@@ -117,7 +134,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     }
     setIsGeneratingDescription(true);
     try {
-      const result = await generateTaskDescription({ title });
+      const result = await generateTaskDescription({ apiKey, input: { title } });
       form.setValue("description", result.description, { shouldDirty: true });
     } catch (error) {
       console.error("AI description generation failed:", error);
@@ -132,6 +149,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
   };
   
   const handleGenerateImage = async () => {
+    if (!checkApiKey() || !apiKey) return;
     const title = form.getValues("title");
     if (!title) {
       form.setError("title", { message: "Please enter a title first to generate an image." });
@@ -139,7 +157,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     }
     setIsGeneratingImage(true);
     try {
-      const result = await generateTaskImage({ title: form.getValues('title') });
+      const result = await generateTaskImage({ apiKey, input: { title: form.getValues('title') } });
       form.setValue('imageUrl', result.imageUrl, { shouldDirty: true });
     } catch (error) {
       console.error("AI image generation failed:", error);
@@ -154,6 +172,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
   };
 
   const handleGenerateSubtasks = async () => {
+    if (!checkApiKey() || !apiKey) return;
     const title = form.getValues("title");
     if (!title) {
       form.setError("title", { message: "Please enter a title first." });
@@ -162,8 +181,11 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     setIsGeneratingSubtasks(true);
     try {
       const result = await generateSubtasks({
-        title,
-        description: form.getValues('description') || '',
+        apiKey,
+        input: {
+            title,
+            description: form.getValues('description') || '',
+        }
       });
       const newSubtasks: Subtask[] = result.subtasks.map((text) => ({
         id: `gen-${Date.now()}-${Math.random()}`,
@@ -245,6 +267,8 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
     })
   };
 
+  const anyAiLoading = isSmartCreating || isGeneratingDescription || isGeneratingImage || isGeneratingSubtasks;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) form.reset();
@@ -279,7 +303,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                           variant="ghost"
                           size="sm"
                           onClick={handleSmartCreate}
-                          disabled={isSmartCreating || !form.watch("title")}
+                          disabled={anyAiLoading || !form.watch("title") || !isApiKeySet}
                         >
                           {isSmartCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 text-primary" />}
                           AI Smart Create
@@ -304,7 +328,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                           variant="ghost"
                           size="sm"
                           onClick={handleGenerateDescription}
-                          disabled={isGeneratingDescription || !form.watch("title")}
+                          disabled={anyAiLoading || !form.watch("title") || !isApiKeySet}
                         >
                           {isGeneratingDescription ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                           Generate with AI
@@ -419,7 +443,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                     )}
                     <Tabs defaultValue="ai" className="w-full">
                       <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="ai">
+                        <TabsTrigger value="ai" disabled={!isApiKeySet}>
                           <Wand2 className="mr-2 h-4 w-4" />
                            Generate with AI
                         </TabsTrigger>
@@ -434,7 +458,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                           variant="outline"
                           className="w-full"
                           onClick={handleGenerateImage}
-                          disabled={isGeneratingImage || !form.getValues('title')}
+                          disabled={anyAiLoading || !form.getValues('title') || !isApiKeySet}
                         >
                           {isGeneratingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                           {form.watch('imageUrl') ? 'Generate a new image' : 'Generate an image'}
@@ -468,7 +492,7 @@ export function NewTaskDialog({ addTask }: NewTaskDialogProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <FormLabel>Subtasks</FormLabel>
-                    <Button type="button" variant="outline" size="sm" onClick={handleGenerateSubtasks} disabled={isGeneratingSubtasks || !form.getValues('title')}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleGenerateSubtasks} disabled={anyAiLoading || !form.getValues('title') || !isApiKeySet}>
                       {isGeneratingSubtasks ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                       Suggest with AI
                     </Button>

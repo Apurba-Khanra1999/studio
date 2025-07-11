@@ -9,6 +9,7 @@ TaskFlow is a modern, full-featured task management application built with Next.
 
 *   **Intuitive Task Management**: A drag-and-drop Kanban board with columns for "To Do", "In Progress", and "Done".
 *   **Rich Task Details**: Tasks include titles, descriptions, priorities, due dates, subtasks, and cover images.
+*   **Bring Your Own API Key**: Users provide their own Gemini API key, which is stored securely in their browser's local storage.
 *   **AI-Powered Workflows**:
     *   **Smart Create**: Generate a complete task (description, priority, subtasks, image) from just a title.
     *   **Natural Language Processing**: Create tasks using plain English like *"Fix login bug, due tomorrow"*.
@@ -18,7 +19,7 @@ TaskFlow is a modern, full-featured task management application built with Next.
 *   **Multiple Views**: Visualize your work with a Kanban **Board**, a data-rich **Dashboard**, and a **Calendar** view.
 *   **Seamless UX**: Features like a command palette (`⌘K`), quick-add popover, notifications, and dark/light modes enhance productivity.
 *   **Secure Authentication**: User sign-up and login with email/password or Google, powered by Firebase.
-*   **Persistent & Scoped Storage**: Task data is saved to `localStorage` and is unique to each logged-in user.
+*   **Persistent & Scoped Storage**: Task data and the user's API key are saved to `localStorage` and are unique to each logged-in user.
 
 ## 🚀 Technology Stack
 
@@ -38,14 +39,15 @@ TaskFlow is a modern, full-featured task management application built with Next.
 
 *   Node.js (v18 or later)
 *   An active Firebase project
-*   A Google AI (Gemini) API Key
+*   A Google AI (Gemini) API Key (which you will provide in the app)
 
 ### 1. Configuration
 
-First, you need to set up your environment variables. Create a file named `.env` in the root of the project and add your Firebase and Google AI credentials.
+First, you need to set up your environment variables. Create a file named `.env` in the root of the project and add your Firebase credentials.
 
 ```env
 # Firebase Client-Side Keys (for authentication)
+# These are safe to be exposed on the client.
 NEXT_PUBLIC_FIREBASE_API_KEY="YOUR_FIREBASE_API_KEY"
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="YOUR_FIREBASE_AUTH_DOMAIN"
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="YOUR_FIREBASE_PROJECT_ID"
@@ -53,11 +55,9 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="YOUR_FIREBASE_STORAGE_BUCKET"
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="YOUR_FIREBASE_MESSAGING_SENDER_ID"
 NEXT_PUBLIC_FIREBASE_APP_ID="YOUR_FIREBASE_APP_ID"
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID="YOUR_FIREBASE_MEASUREMENT_ID"
-
-# Google AI Server-Side Key (for Genkit)
-# IMPORTANT: This key should NOT be prefixed with NEXT_PUBLIC_
-GOOGLE_API_KEY="YOUR_GEMINI_API_KEY"
 ```
+
+**Note:** You no longer need to add a `GOOGLE_API_KEY` to this file. The application will prompt you to enter your Gemini API key after you log in.
 
 ### 2. Install Dependencies
 
@@ -81,13 +81,11 @@ The application will be available at `http://localhost:3000`.
 
 ## 🧠 Core Concepts & Features
 
-### Authentication
+### Authentication & API Key Management
 
-User authentication is handled by **Firebase**. The app supports:
-*   **Email & Password**: Users can sign up with their first name, last name, and email.
-*   **Google Sign-In**: One-click authentication via Google.
-*   **Protected Routes**: The main application is only accessible to logged-in users. The layout file (`src/app/(main)/layout.tsx`) contains the logic to redirect unauthenticated users to the `/login` page.
-*   **Profile Management**: The user's name and avatar are automatically fetched and displayed in the navigation bar.
+*   **Firebase Authentication**: The app supports email/password and Google Sign-In.
+*   **User-Provided API Key**: After logging in for the first time, users are prompted to enter their Google Gemini API key.
+*   **Secure Local Storage**: The API key is stored securely in the browser's `localStorage`, scoped to the logged-in user. It is never exposed in the source code or sent to any server other than Google's AI services.
 
 ### The Kanban Board (`/board`)
 

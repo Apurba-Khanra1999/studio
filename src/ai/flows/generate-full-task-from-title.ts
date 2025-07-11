@@ -93,8 +93,5 @@ export async function generateFullTaskFromTitle(flowInput: GenerateFullTaskFromT
   
   return generateFullTaskFromTitleFlow(input, {
     plugins: [googleAI({ apiKey })],
-    models: [{
-        model: 'gemini-2.0-flash',
-    }]
   });
 }

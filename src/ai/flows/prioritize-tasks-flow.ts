@@ -80,8 +80,5 @@ export async function prioritizeTasks(flowInput: PrioritizeTasksFlowInput): Prom
   
   return prioritizeTasksFlow(input, {
     plugins: [googleAI({ apiKey })],
-    models: [{
-        model: 'gemini-2.0-flash',
-    }]
   });
 }

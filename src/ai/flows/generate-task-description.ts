@@ -59,8 +59,5 @@ export async function generateTaskDescription(
   
   return generateTaskDescriptionFlow(input, {
     plugins: [googleAI({ apiKey })],
-    models: [{
-        model: 'gemini-2.0-flash',
-    }]
   });
 }

@@ -72,8 +72,5 @@ export async function parseNaturalLanguageTask(
   
   return parseNaturalLanguageTaskFlow({ text: input.text, currentDate }, {
     plugins: [googleAI({ apiKey })],
-    models: [{
-        model: 'gemini-2.0-flash',
-    }]
   });
 }

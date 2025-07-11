@@ -62,8 +62,5 @@ export async function generateSubtasks(
 
   return generateSubtasksFlow(input, {
     plugins: [googleAI({ apiKey })],
-    models: [{
-        model: 'gemini-2.0-flash',
-    }]
   });
 }

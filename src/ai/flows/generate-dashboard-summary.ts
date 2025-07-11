@@ -76,8 +76,5 @@ export async function generateDashboardSummary(
   
   return generateDashboardSummaryFlow(input, {
     plugins: [googleAI({ apiKey })],
-    models: [{
-        model: 'gemini-2.0-flash',
-    }]
   });
 }

@@ -122,7 +122,7 @@ export default function RootPage() {
         <section className="container mx-auto px-4 md:px-6 mb-20 md:mb-32">
             <div className="relative rounded-xl shadow-2xl overflow-hidden border">
                 <Image 
-                    src="https://raw.githubusercontent.com/Apurba-Khanra1999/studio/refs/heads/master/taskflow-banner-1.png"
+                    src="https://dev.inktagon.com/fileupload/taskflow-banner-1.png"
                     alt="TaskFlow application interface showing a Kanban board with AI-generated tasks and images"
                     width={1200}
                     height={700}

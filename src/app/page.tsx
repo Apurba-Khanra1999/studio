@@ -17,7 +17,7 @@ const LandingHeader = () => (
       <nav className="hidden md:flex gap-6 text-sm font-medium">
         <Link href="#features" className="text-muted-foreground hover:text-foreground">Features</Link>
         <Link href="#testimonials" className="text-muted-foreground hover:text-foreground">Testimonials</Link>
-        <Link href="/about" className="text-muted-foreground hover:text-foreground">Documentation</Link>
+        <Link href="/login" className="text-muted-foreground hover:text-foreground">Documentation</Link>
       </nav>
       <div className="flex items-center gap-2">
         <Button variant="ghost" asChild>
@@ -122,14 +122,14 @@ export default function RootPage() {
         <section className="container mx-auto px-4 md:px-6 mb-20 md:mb-32">
             <div className="relative rounded-xl shadow-2xl overflow-hidden border">
                 <Image 
-                    src="https://dev.inktagon.com/fileupload/taskflow-banner-1.png"
+                    src="https://dev.inktagon.com/fileupload/taskflow-banner-2.png"
                     alt="TaskFlow application interface showing a Kanban board with AI-generated tasks and images"
-                    width={1200}
-                    height={700}
+                    width={1920}
+                    height={1080}
                     className="w-full"
                     data-ai-hint="app interface"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none"></div>
             </div>
         </section>
 

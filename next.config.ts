@@ -22,6 +22,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'dev.inktagon.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
   allowedDevOrigins: ['https://*.cloudworkstations.dev'],
